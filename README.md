@@ -4,6 +4,7 @@
 
 This project requires the following:
 - [Docker](https://docs.docker.com/desktop/)
+    - Windows will require installation of [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) for running linux containers
 - IDE Supporting [Devcontainers](https://containers.dev) (i.e VS Code)
     - [VS Code Devcontainer Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
@@ -13,8 +14,42 @@ Devcontainers allow an IDE to connect directly to a docker container allowing yo
 Any changes made in the devcontainer will be saved to your local device.
 If you are using an IDE other than VS Code, please reference the devcontainer documentation for your IDE.
 
-To run this VS Code you must:
-1. install the devcontainer extension
+To run this devcontainer in VS Code follow these steps:
+1. Ensure that Docker is installed and running
+1. Install the [VS Code Devcontainer Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+1. Clone this repo locally
+1. Open the repo in VS Code
+1. VS Code may show a pop-up to build and reopen in a devcontainer, you can click that to build and open the repo in VS Code in that container
+1. Otherwise, you may access the command palette (i.e. `cmd+shift+p` or `ctrl_shift+p`) to search and run:
+```text
+Dev Containers: Rebuild and Reopen in Container
+```
+
+This should build the docker container locally on your machine, launch it and connect your local VS Code into the container at the root of this repo.
+You can verify that you are in the devcontainer by checking the lower left corner of VS Code for "Dev Container: CellNetSim @ desktoplinux" or something similar.
+
+#### Exiting a Devcontainer
+
+When you need to exit the devcontainer (i.e. to perform git operations locally), you may run:
+```text
+Dev Containers: Reopen Folder Locally
+```
+
+#### Reusing a Devcontainer
+
+After building the container once, you may reuse it by opening the command palette and running:
+```text
+Dev Containers: Reopen in Container
+```
+
+This avoids needlessly building the container each time you open the repo.
+
+#### Rebuilding the Devcontainer
+
+If you *need* to update the Devcontainer (I.e. added to the Dockerfile or added packages to requirements.txt), then you can simply open the command palette to search and run:
+```text
+Dev Containers: Rebuild and Reopen in Container
+```
 
 ### Running in Docker
 
