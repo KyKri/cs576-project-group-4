@@ -1,5 +1,41 @@
 # Cellular Network Simulator
 
+## Project Setup
+
+This project requires the following:
+- [Docker](https://docs.docker.com/desktop/)
+- IDE Supporting [Devcontainers](https://containers.dev) (i.e VS Code)
+    - [VS Code Devcontainer Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+### Developing with Devcontainers
+
+Devcontainers allow an IDE to connect directly to a docker container allowing you to develop the code right in the docker environment.
+Any changes made in the devcontainer will be saved to your local device.
+If you are using an IDE other than VS Code, please reference the devcontainer documentation for your IDE.
+
+To run this VS Code you must:
+1. install the devcontainer extension
+
+### Running in Docker
+
+This documentation assumes that the project is simply being run, not being actively developed in Docker.
+You may run this project in Docker following these steps:
+- *Note*: Apple Silicon macs (i.e. M1-M4) should set their default architecture for this project to AMD64, prior to running commands in Docker:
+```bash
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+```
+
+1. Build the container:
+```bash
+docker build . -f Dockerfile -t cellnetsim:latest
+```
+1. Run the container, with capabilities for TUN/TAP:
+```bash
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW --device=/dev/net/tun:/dev/net/tun cellnetsim:latest bash
+```
+
+You can then interact with this container directly via terminal.
+
 ## Assignment description
 
 ### Physical
