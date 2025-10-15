@@ -27,7 +27,7 @@ impl UE {
         }
     }
 
-    pub fn change_ip(&mut self, new_ip: String) {
+    pub fn change_ip(&self, new_ip: String) {
         assign_ip_to_tun(&self.iface, &new_ip);
         setup_default_route(&self.iface, &new_ip);
     }
