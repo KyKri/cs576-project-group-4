@@ -1,0 +1,15 @@
+[package]
+name = "layer3"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "layer3"
+crate-type = ["cdylib"]
+
+[dependencies]
+nix = { version = "0.30.1", features = ["sched", "fs", "signal"] }
+pyo3 = "0.25.0"
+thiserror = "2.0.17"
+tun-tap = "0.1.4"
