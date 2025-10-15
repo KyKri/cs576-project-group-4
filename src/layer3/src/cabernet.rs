@@ -1,12 +1,12 @@
 use crate::ue::UE;
 use crate::error::Result;
-pub struct Manager {
+pub struct Cabernet {
     pub ues: Vec<UE>,
 }
 
-impl Manager {
+impl Cabernet {
     pub fn new() -> Self {
-        Manager { ues: Vec::new() }
+        Cabernet { ues: Vec::new() }
     }
 
     pub fn send_frame(&self, frame: Vec<u8>) -> usize{
