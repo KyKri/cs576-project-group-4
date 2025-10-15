@@ -1,5 +1,5 @@
 use crate::ue::UE;
-use crate::error::L3Result as Result;
+use crate::error::Result;
 pub struct Manager {
     pub ues: Vec<UE>,
 }
