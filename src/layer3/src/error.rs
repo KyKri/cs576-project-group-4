@@ -9,11 +9,11 @@ pub enum CabernetError {
     #[error("IO Error happened: {0}")]
     IOError(#[from] std::io::Error),
 
-    #[error("requested ip is not assigned to any UE in the network")]
-    IPNotAssignedError,
+    #[error("requested ip [{0}] is not assigned to any UE in the network")]
+    IPNotAssigned(String),
 
     #[error("failed to parse ipv4 header: {0}")]
-    Ipv4HeaderParseError(#[from] HeaderSliceError),
+    Ipv4HeaderParse(#[from] HeaderSliceError),
 }
 
 impl From<CabernetError> for PyErr {

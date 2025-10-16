@@ -1,17 +1,12 @@
-mod error;
 mod cabernet;
+mod error;
 mod ue;
 use pyo3::prelude::*;
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
+pub use cabernet::Cabernet;
 
-/// A Python module implemented in Rust.
+/// The Python Wrapper of the cabernet module implemented in Rust.
 #[pymodule]
 fn layer3(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    Ok(())
+    m.add_class::<cabernet::Cabernet>()
 }

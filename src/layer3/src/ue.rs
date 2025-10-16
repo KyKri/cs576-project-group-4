@@ -1,3 +1,4 @@
+use crate::error::Result;
 use nix::libc;
 use nix::sched::{clone, setns, CloneFlags};
 use nix::sys::wait::waitpid;
@@ -17,6 +18,9 @@ impl UE {
         // create pause process in new netns
         let pause_pid = create_pause();
 
+        // attach netns to the ip netns list (for better visibility)
+        attach_netns(pause_pid);
+
         // create and setup tun in that netns
         let iface = create_tun(pause_pid, &ip);
 
@@ -32,19 +36,42 @@ impl UE {
         setup_default_route(&self.iface, &new_ip);
     }
 
-    pub fn send(&self, data: &[u8]) -> usize {
-        self.iface.send(data).expect("Failed to send data")
+    /// Send IPv4 frames to the UE
+    /// data is assumed to be the raw IPv4 packet (without Ethernet header)
+    pub fn send(&self, data: &[u8]) -> Result<usize> {
+        let mut buf = [0u8; 1504];
+        buf[2] = 0x08;
+        buf[3] = 0xDD;
+        buf[4..(4 + data.len())].copy_from_slice(data);
+        self.iface.send(&buf[..4 + data.len()]).map_err(Into::into)
     }
 
-    pub fn recv(&self, buf: &mut [u8]) -> usize {
-        self.iface.recv(buf).expect("Failed to receive data")
+    pub fn recv(&self, buf: &mut [u8]) -> Result<usize> {
+        self.iface.recv(buf).map_err(Into::into)
+    }
+}
+
+fn attach_netns(pause_pid: Pid) {
+    // ip netns attach childns {pause_pid}
+    let output = Command::new("ip")
+        .args(format!("netns attach ana-{pause_pid} {pause_pid}").split(' '))
+        .output()
+        .expect("failed to execute process");
+    if !output.status.success() {
+        eprintln!(
+            "Error attaching netns: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 
 pub fn create_pause() -> Pid {
     // allocating the stack
     let mut stack: Vec<u8> = Vec::with_capacity(STACK_SIZE);
-    unsafe { stack.set_len(STACK_SIZE) };
+    #[allow(clippy::uninit_vec)]
+    unsafe {
+        stack.set_len(STACK_SIZE)
+    };
     let stack_top = stack.as_mut();
 
     let child_func = Box::new(|| -> isize { unsafe { nix::libc::pause() as isize } });
@@ -90,7 +117,7 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
 fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
     //ip addr add 10.10.0.1/32 dev tun0
     let output = Command::new("ip")
-        .args(format!("addr add {ip} dev {}", &tun.name()).split(' '))
+        .args(format!("addr add 10.0.0.{ip} peer 10.200.0.{ip} dev {}", &tun.name()).split(' '))
         .output()
         .expect("failed to execute process");
     if !output.status.success() {

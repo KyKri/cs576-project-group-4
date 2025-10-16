@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "layer3"
-crate-type = ["cdylib"]
+crate-type = ["cdylib","rlib"]
+
 
 [dependencies]
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel", "crossbeam-queue"] }

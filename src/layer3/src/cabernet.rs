@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use crate::error::{CabernetError, Result};
 use crate::ue::UE;
+use pyo3::{pyclass, pymethods};
 
+#[pyclass]
 pub struct Cabernet {
     pub ues: Vec<Arc<UE>>,
     pub buffer: Arc<crossbeam::queue::SegQueue<Vec<u8>>>,
@@ -10,7 +12,9 @@ pub struct Cabernet {
 }
 
 // APIs
+#[pymethods]
 impl Cabernet {
+    #[new]
     pub fn new() -> Self {
         Cabernet {
             ues: Vec::new(),
@@ -23,15 +27,15 @@ impl Cabernet {
         let iph = etherparse::Ipv4HeaderSlice::from_slice(&frame)?;
         let dst_ip = iph.destination_addr().to_string();
 
-        Ok(self.get_ue(&dst_ip)?.send(&frame))
+        self.get_ue(&dst_ip)?.send(&frame)
     }
 
     pub fn poll_frame(&mut self) -> Option<Vec<u8>> {
         self.buffer.pop().map(|b| b.to_vec())
     }
 
-    pub fn create_ue(&mut self, ip: String) -> Result<()> {
-        let ue = UE::new(ip);
+    pub fn create_ue(&mut self, ip: &str) -> Result<()> {
+        let ue = UE::new(ip.into());
         self.ues.push(Arc::new(ue));
         let j = self.poll_from_ue(self.ues.len() - 1);
         self.threads.push(j);
@@ -42,23 +46,36 @@ impl Cabernet {
         self.get_ue(&old_ip)?.change_ip(new_ip);
         Ok(())
     }
+}
 
+impl Default for Cabernet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Cabernet {
     fn get_ue(&self, ip: &str) -> Result<Arc<UE>> {
         self.ues
             .iter()
             .find(|ue| ue.ip == ip)
-            .ok_or(CabernetError::IPNotAssignedError)
+            .ok_or(CabernetError::IPNotAssigned(ip.into()))
             .map(Arc::clone)
     }
 
-    fn poll_from_ue(&self, ue_id: usize) -> std::thread::JoinHandle<()> {
-        let ue = &self.ues[ue_id];
-        let ue = Arc::clone(ue);
+    pub fn poll_from_ue(&self, ue_id: usize) -> std::thread::JoinHandle<()> {
+        let ue = Arc::clone(&self.ues[ue_id]);
         let buffer = Arc::clone(&self.buffer);
         std::thread::spawn(move || loop {
-            let mut buf = Vec::with_capacity(1500);
-            let _nbytes = ue.recv(&mut buf);
-            buffer.push(buf);
+            let mut buf = [0u8; 1504];
+            let nbytes = ue.recv(&mut buf).unwrap();
+
+            let proto = u16::from_be_bytes([buf[2], buf[3]]);
+            match proto {
+                0x0800 => buffer.push(buf[4..nbytes].to_vec()),
+                0x86DD => eprintln!("IPv6 packet, ignoring..."),
+                _ => eprintln!("Unknown proto {proto:#06x}, ignoring..."),
+            }
         })
     }
 }
