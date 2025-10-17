@@ -38,12 +38,8 @@ impl UE {
 
     /// Send IPv4 frames to the UE
     /// data is assumed to be the raw IPv4 packet (without Ethernet header)
+    /// MTU is assumed to be 1500 bytes
     pub fn send(&self, data: &[u8]) -> Result<usize> {
-        // let mut buf = [0u8; 1504];
-        // buf[2] = 0x08;
-        // buf[3] = 0xDD;
-        // buf[4..(4 + data.len())].copy_from_slice(data);
-        // self.iface.send(&buf[..4 + data.len()]).map_err(Into::into)
         self.iface.send(data).map_err(Into::into)
     }
 
@@ -116,7 +112,6 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
 }
 
 fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
-    //ip addr add 10.10.0.1/32 dev tun0
     let output = Command::new("ip")
         .args(format!("addr add {ip}/24 dev {}", &tun.name()).split(' '))
         .output()
@@ -130,7 +125,6 @@ fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
 }
 
 fn bring_interface_up(tun: &tun_tap::Iface) {
-    // ip link set tun0 up
     let output = Command::new("ip")
         .args(format!("link set dev {} up", &tun.name()).split(' '))
         .output()
@@ -144,7 +138,6 @@ fn bring_interface_up(tun: &tun_tap::Iface) {
 }
 
 fn setup_default_route(tun: &tun_tap::Iface, ip: &str) {
-    // ip r add default via {ip} {iface.name()}
     let output = Command::new("ip")
         .args(format!("r add default via {ip} dev {}", &tun.name()).split(' '))
         .output()
