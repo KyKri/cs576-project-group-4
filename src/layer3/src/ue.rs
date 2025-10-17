@@ -39,11 +39,12 @@ impl UE {
     /// Send IPv4 frames to the UE
     /// data is assumed to be the raw IPv4 packet (without Ethernet header)
     pub fn send(&self, data: &[u8]) -> Result<usize> {
-        let mut buf = [0u8; 1504];
-        buf[2] = 0x08;
-        buf[3] = 0xDD;
-        buf[4..(4 + data.len())].copy_from_slice(data);
-        self.iface.send(&buf[..4 + data.len()]).map_err(Into::into)
+        // let mut buf = [0u8; 1504];
+        // buf[2] = 0x08;
+        // buf[3] = 0xDD;
+        // buf[4..(4 + data.len())].copy_from_slice(data);
+        // self.iface.send(&buf[..4 + data.len()]).map_err(Into::into)
+        self.iface.send(data).map_err(Into::into)
     }
 
     pub fn recv(&self, buf: &mut [u8]) -> Result<usize> {
@@ -106,7 +107,7 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
 
     setns(new_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
     // create tun
-    let tun = tun_tap::Iface::new(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
+    let tun = tun_tap::Iface::without_packet_info(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
     setup_tun(&tun, ip);
     // go back to original ns
     setns(org_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
@@ -117,7 +118,7 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
 fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
     //ip addr add 10.10.0.1/32 dev tun0
     let output = Command::new("ip")
-        .args(format!("addr add 10.0.0.{ip} peer 10.200.0.{ip} dev {}", &tun.name()).split(' '))
+        .args(format!("addr add {ip}/24 dev {}", &tun.name()).split(' '))
         .output()
         .expect("failed to execute process");
     if !output.status.success() {

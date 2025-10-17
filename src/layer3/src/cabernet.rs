@@ -67,14 +67,12 @@ impl Cabernet {
         let ue = Arc::clone(&self.ues[ue_id]);
         let buffer = Arc::clone(&self.buffer);
         std::thread::spawn(move || loop {
-            let mut buf = [0u8; 1504];
+            let mut buf = [0u8; 1500];
             let nbytes = ue.recv(&mut buf).unwrap();
 
-            let proto = u16::from_be_bytes([buf[2], buf[3]]);
-            match proto {
-                0x0800 => buffer.push(buf[4..nbytes].to_vec()),
-                0x86DD => eprintln!("IPv6 packet, ignoring..."),
-                _ => eprintln!("Unknown proto {proto:#06x}, ignoring..."),
+            match etherparse::Ipv4HeaderSlice::from_slice(&buf[..nbytes]) {
+                Ok(_) => buffer.push(buf[..nbytes].to_vec()),
+                Err(e) => eprintln!("Failed to parse IPv4 header: {e}"),
             }
         })
     }
