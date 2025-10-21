@@ -4,26 +4,23 @@ This code simulates a wireless network with base stations (towers) and user devi
 
 ## What This Code Does
 
-Imagine you have:
+We have: (feel free to play with the number)
 - **3 Towers**: 2 big 5G towers + 1 small LTE tower
 - **3 Phones**: Users trying to connect to the best tower
 - **Goal**: Calculate which tower each phone should connect to for the best signal
 
-## Key Concepts (Simplified)
+## Key Concept
 
 ### 1. **Signal Strength** 
-- Like how loud a sound is when it reaches you
 - Gets weaker the farther you are from the tower
-- Measured in dBm (like decibels for sound)
-
+- Measured in dBm
 ### 2. **Path Loss**
 - How much the signal weakens as it travels through air
 - Formula: `PL = 20*log10((4*π*distance)/wavelength)`
-- Think of it like sound getting quieter as you move away
+
 
 ### 3. **Shadow Fading**
 - Random signal variations due to buildings, trees, weather
-- Like how your phone signal fluctuates even when you're not moving
 - Simulated with random numbers
 
 ### 4. **SINR (Signal-to-Interference Ratio)**
@@ -42,7 +39,7 @@ Imagine you have:
 - **`PATHLOSS_N`**: How quickly signal weakens with distance (5.0 = urban environment)
 - **`SHADOW_SIGMA_DB`**: Random signal variations due to obstacles (6 dB is typical for urban)
 - **`MIN_DISTANCE_M`**: Prevents division by zero in path loss calculations
-- **`BS_GAIN_DBI`**: Tower antennas amplify signals (15 dBi = good directional antenna)
+- **`BS_GAIN_DBI`**: Tower pantennas amplify signals (15 dBi = good directional antenna)
 - **`UE_GAIN_DBI`**: Phone antennas (0 dBi = typical omnidirectional antenna)
 - **`BS_TX_POWER_DBM`**: Tower power (40 dBm = 10 Watts, typical for macro cells)
 - **`UE_TX_POWER`**: Phone power (23 dBm = 200 mW, typical for mobile devices)
@@ -164,6 +161,4 @@ The code will automatically:
 - **Mbps**: Internet speed (higher = faster)
 - **dBm**: Signal strength (closer to 0 = stronger)
 
-## Real-World Connection
 
-This simulates how your phone chooses which cell tower to connect to when you're walking around. The phone picks the tower that gives the best signal quality and fastest internet speed!
