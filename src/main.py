@@ -10,13 +10,6 @@ while True:
     if frame is None:
         continue
 
-    # print(f"Frame polled: {len(frame)} bytes")
-    # src = frame[16:20]
-    # dst = frame[20:24]
-    # src = ".".join(map(str, src))
-    # dst = ".".join(map(str, dst))
-    # print(f"Frame received from {src} to {dst}")
-
     i+=1
     # simulate 5% packet loss
     if i % 20 == 0:
