@@ -7,13 +7,20 @@ use std::process::Command;
 
 const STACK_SIZE: usize = 1024 * 1024; // 1 MB stack for child
 
+/// Representation of a User Equipment (UE)
+/// Each UE has its own network namespace with a TUN interface which is used to route the entire
+/// network traffic to/from the UE.
 pub struct UE {
+    /// IP address assigned to the UE
     pub ip: String,
+    /// TUN interface associated with the UE
     pub iface: tun_tap::Iface,
+    /// PID of the pause process running in the UE's network namespace
     pub pause_pid: Pid,
 }
 
 impl UE {
+    /// Create a new UE with the specified IP address
     pub fn new(ip: String) -> Self {
         // create pause process in new netns
         let pause_pid = create_pause();
@@ -31,6 +38,7 @@ impl UE {
         }
     }
 
+    /// Change the IP address assigned to the UE
     pub fn change_ip(&self, new_ip: String) {
         assign_ip_to_tun(&self.iface, &new_ip);
         setup_default_route(&self.iface, &new_ip);
@@ -43,11 +51,15 @@ impl UE {
         self.iface.send(data).map_err(Into::into)
     }
 
+    /// Receive IPv4 frames from the UE
+    /// data is assumed to be the raw IPv4 packet (without Ethernet header)
+    /// MTU is assumed to be 1500 bytes
     pub fn recv(&self, buf: &mut [u8]) -> Result<usize> {
         self.iface.recv(buf).map_err(Into::into)
     }
 }
 
+/// Attach the network namespace of the pause process to the ip netns list
 fn attach_netns(pause_pid: Pid) {
     // ip netns attach childns {pause_pid}
     let output = Command::new("ip")
@@ -62,6 +74,7 @@ fn attach_netns(pause_pid: Pid) {
     }
 }
 
+/// Create a pause process in a new network namespace
 pub fn create_pause() -> Pid {
     // allocating the stack
     let mut stack: Vec<u8> = Vec::with_capacity(STACK_SIZE);
@@ -84,6 +97,7 @@ pub fn create_pause() -> Pid {
     }
 }
 
+/// Create and setup a TUN interface in the network namespace of the given PID
 fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
     // set ns into cid's nn
     let new_ns_fd = nix::fcntl::open(
@@ -103,7 +117,8 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
 
     setns(new_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
     // create tun
-    let tun = tun_tap::Iface::without_packet_info(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
+    let tun =
+        tun_tap::Iface::without_packet_info(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
     setup_tun(&tun, ip);
     // go back to original ns
     setns(org_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
@@ -111,6 +126,7 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
     tun
 }
 
+/// Assign an IP address to the TUN interface
 fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
     let output = Command::new("ip")
         .args(format!("addr add {ip}/24 dev {}", &tun.name()).split(' '))
@@ -124,6 +140,7 @@ fn assign_ip_to_tun(tun: &tun_tap::Iface, ip: &str) {
     }
 }
 
+/// Bring the TUN interface up
 fn bring_interface_up(tun: &tun_tap::Iface) {
     let output = Command::new("ip")
         .args(format!("link set dev {} up", &tun.name()).split(' '))
@@ -137,6 +154,7 @@ fn bring_interface_up(tun: &tun_tap::Iface) {
     }
 }
 
+/// Setup the default route via the TUN interface
 fn setup_default_route(tun: &tun_tap::Iface, ip: &str) {
     let output = Command::new("ip")
         .args(format!("r add default via {ip} dev {}", &tun.name()).split(' '))
@@ -151,6 +169,7 @@ fn setup_default_route(tun: &tun_tap::Iface, ip: &str) {
     }
 }
 
+/// Setup the TUN interface with the given IP address
 fn setup_tun(tun: &tun_tap::Iface, ip: &str) {
     assign_ip_to_tun(tun, ip);
     bring_interface_up(tun);
