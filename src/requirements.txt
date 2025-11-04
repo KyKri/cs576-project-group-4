@@ -9,6 +9,8 @@ httptools==0.7.1
 httpx==0.28.1
 idna==3.11
 iniconfig==2.1.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
 packaging==25.0
 pluggy==1.6.0
 pydantic==2.12.3
