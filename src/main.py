@@ -29,6 +29,37 @@ async def control_stop():
     # Logic to stop
     return {"message": "Stop action received"}
 
+@app.post("/init/grid")
+async def init_grid():
+    return {"message": "Init grid received"}
+
+@app.post("/init/basestation")
+async def init_basestation():
+    # Logic to stop
+    return {"message": "Init basestation received"}
+
+@app.post("/init/userequipment")
+async def init_userequipment():
+    # Logic to stop
+    return {"message": "Init userequipment received"}
+
+@app.post("/update/basestation")
+async def update_basestation():
+    # Logic to stop
+    return {"message": "Update basestation received"}
+
+@app.post("/update/userequipment")
+async def update_userequipment():
+    # Logic to stop
+    return {"message": "Update userequipment received"}
+
+@app.websocket("/activity")
+async def activity_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
