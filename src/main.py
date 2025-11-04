@@ -1,47 +1,33 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import uvicorn
 
-print("Hello world")
 app = FastAPI()
 
-html_content = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat</title>
-    </head>
-    <body>
-        <h1>WebSocket Chat</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Send</button>
-        </form>
-        <ul id='messages'>
-        </ul>
-        <script>
-            var ws = new WebSocket("ws://localhost:8000/ws");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
-            }
-        </script>
-    </body>
-</html>
-"""
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
-async def get():
-    return HTMLResponse(html_content)
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
+
+@app.post("/control/start")
+async def control_start():
+    # Logic to start
+    return {"message": "Start action received"}
+
+@app.post("/control/pause")
+async def control_pause():
+    # Logic to pause
+    return {"message": "Pause action received"}
+
+@app.post("/control/stop")
+async def control_stop():
+    # Logic to stop
+    return {"message": "Stop action received"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
