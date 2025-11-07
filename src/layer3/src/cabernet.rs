@@ -1,14 +1,10 @@
-use std::sync::Arc;
-
 use crate::error::{CabernetError, Result};
 use crate::ue::UE;
 use pyo3::{pyclass, pymethods};
 
 #[pyclass]
 pub struct Cabernet {
-    pub ues: Vec<Arc<UE>>,
-    pub buffer: Arc<crossbeam::queue::SegQueue<Vec<u8>>>,
-    pub threads: Vec<std::thread::JoinHandle<()>>,
+    pub ues: Vec<UE>,
 }
 
 // APIs
@@ -16,11 +12,7 @@ pub struct Cabernet {
 impl Cabernet {
     #[new]
     pub fn new() -> Self {
-        Cabernet {
-            ues: Vec::new(),
-            buffer: Arc::new(crossbeam::queue::SegQueue::new()),
-            threads: Vec::new(),
-        }
+        Cabernet { ues: Vec::new() }
     }
 
     pub fn send_frame(&self, frame: Vec<u8>) -> Result<usize> {
@@ -31,17 +23,40 @@ impl Cabernet {
     }
 
     pub fn poll_frame(&mut self) -> Option<Vec<u8>> {
-        self.buffer.pop().map(|b| b.to_vec())
+        // self.buffer.pop().map(|b| b.to_vec())
+        for ue in &mut self.ues {
+            let mut buf = [0u8; 1500];
+            match ue.recv(&mut buf) {
+                Ok(Some(nbytes)) => return Some(buf[..nbytes].to_vec()),
+                Ok(None) => continue,
+                Err(e) => {
+                    eprintln!("Error receiving frame from UE {}: {}", ue.ip, e);
+                    continue;
+                }
+            }
+        }
+        None
     }
 
     pub fn create_ue(&mut self, ip: &str) -> Result<()> {
         let ue = UE::new(ip.into());
-        self.ues.push(Arc::new(ue));
-        let j = self.poll_from_ue(self.ues.len() - 1);
-        self.threads.push(j);
+        self.ues.push(ue);
         Ok(())
     }
 
+    /// Delete the UE with the specified IP address.
+    pub fn delete_ue(&mut self, ip: &str) -> Result<()> {
+        dbg!(&self.ues);
+        let index = self
+            .ues
+            .iter()
+            .position(|ue| ue.ip == ip)
+            .ok_or(CabernetError::IPNotAssigned(ip.into()))?;
+        let _ue = self.ues.remove(index);
+        Ok(())
+    }
+
+    /// Change the IP address assigned to a UE.
     pub fn change_ip(&mut self, old_ip: String, new_ip: String) -> Result<()> {
         self.get_ue(&old_ip)?.change_ip(new_ip);
         Ok(())
@@ -55,25 +70,11 @@ impl Default for Cabernet {
 }
 
 impl Cabernet {
-    fn get_ue(&self, ip: &str) -> Result<Arc<UE>> {
+    // fn get_ue(&self, ip: &str) -> Result<Arc<UE>> {
+    fn get_ue(&self, ip: &str) -> Result<&UE> {
         self.ues
             .iter()
             .find(|ue| ue.ip == ip)
             .ok_or(CabernetError::IPNotAssigned(ip.into()))
-            .map(Arc::clone)
-    }
-
-    pub fn poll_from_ue(&self, ue_id: usize) -> std::thread::JoinHandle<()> {
-        let ue = Arc::clone(&self.ues[ue_id]);
-        let buffer = Arc::clone(&self.buffer);
-        std::thread::spawn(move || loop {
-            let mut buf = [0u8; 1500];
-            let nbytes = ue.recv(&mut buf).unwrap();
-
-            match etherparse::Ipv4HeaderSlice::from_slice(&buf[..nbytes]) {
-                Ok(_) => buffer.push(buf[..nbytes].to_vec()),
-                Err(e) => eprintln!("Failed to parse IPv4 header: {e}"),
-            }
-        })
     }
 }
