@@ -10,6 +10,7 @@ const STACK_SIZE: usize = 1024 * 1024; // 1 MB stack for child
 /// Representation of a User Equipment (UE)
 /// Each UE has its own network namespace with a TUN interface which is used to route the entire
 /// network traffic to/from the UE.
+#[derive(Debug)]
 pub struct UE {
     /// IP address assigned to the UE
     pub ip: String,
@@ -54,8 +55,21 @@ impl UE {
     /// Receive IPv4 frames from the UE
     /// data is assumed to be the raw IPv4 packet (without Ethernet header)
     /// MTU is assumed to be 1500 bytes
-    pub fn recv(&self, buf: &mut [u8]) -> Result<usize> {
-        self.iface.recv(buf).map_err(Into::into)
+    pub fn recv(&self, buf: &mut [u8]) -> Result<Option<usize>> {
+        match self.iface.recv(buf) {
+            Ok(nbytes) => match etherparse::Ipv4HeaderSlice::from_slice(&buf[..nbytes]) {
+                Ok(_) => Ok(Some(nbytes)),
+                Err(e) => {
+                    eprintln!("Failed to parse IPv4 header: {e}");
+                    Ok(None)
+                }
+            },
+            Err(e) => match e.kind() {
+                std::io::ErrorKind::WouldBlock => Ok(None),
+                _ => Err(e),
+            },
+        }
+        .map_err(Into::into)
     }
 }
 
@@ -69,6 +83,21 @@ fn attach_netns(pause_pid: Pid) {
     if !output.status.success() {
         eprintln!(
             "Error attaching netns: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+/// Detach the network namespace of the pause process from the ip netns list
+fn detach_netns(pause_pid: Pid) {
+    // ip netns delete childns
+    let output = Command::new("ip")
+        .args(format!("netns delete ana-{pause_pid}").split(' '))
+        .output()
+        .expect("failed to execute process");
+    if !output.status.success() {
+        eprintln!(
+            "Error detaching netns: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
@@ -119,6 +148,7 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
     // create tun
     let tun =
         tun_tap::Iface::without_packet_info(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
+    tun.set_non_blocking().unwrap();
     setup_tun(&tun, ip);
     // go back to original ns
     setns(org_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
@@ -178,6 +208,9 @@ fn setup_tun(tun: &tun_tap::Iface, ip: &str) {
 
 impl Drop for UE {
     fn drop(&mut self) {
+        eprintln!("Dropping UE with IP {}", self.ip);
+        // remove netns from ip netns list
+        detach_netns(self.pause_pid);
         // kill pause process
         let _ = nix::sys::signal::kill(self.pause_pid, nix::sys::signal::Signal::SIGKILL);
         // wait for pause process to exit
