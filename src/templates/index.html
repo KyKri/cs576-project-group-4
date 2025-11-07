@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>CellNetSim</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    </head>
+    <body>
+        <h1>CellNetSim</h1>
+        <div>
+            <canvas id="simulation" width="500" height="500"></canvas>
+        </div>
+        <div>
+            <h2>Controls</h2>
+            <form id="controls">
+                <button onclick="event.preventDefault(); control('start')">
+                    <i class="fas fa-play"></i> Start
+                </button>
+                <button onclick="event.preventDefault(); control('pause')">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button onclick="event.preventDefault(); control('stop')">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+            </form>
+        </div>
+
+        <div>
+            <h2>Components</h2>
+            <div id="components">
+                <div id="icon-tray">
+                    {% for icon in ['fa-tower-cell', 'fa-mobile']%}
+                    <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>       
+
+        <div>
+            <h2>Details</h2>
+            <div id="details">
+                {% if device_selected %}
+                <ul>
+                    <li>IP Address: {{device_selected.ip}}</li>
+                </ul>
+                {% else %}
+                <p>Select a device to see details</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <h2>Logs</h2>
+            <div id="logs">
+                {% for log in ['ue1 sending packet to ue2 via bs1', 'ue2 moved to bs2'] %}
+                <p>{{log}}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="websocket-example">
+            <form id="ws" action="" onsubmit="sendMessage(event)">
+                <input type="text" id="messageText" autocomplete="off"/>
+                <button>Send</button>
+            </form>
+            <ul id='messages'>
+            </ul>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://kit.fontawesome.com/c663cc9ee5.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', path='/js/index.js') }}"></script>
+        <script src="{{ url_for('static', path='/js/drag-drop.js') }}"></script>
+    </body>
+</html>
