@@ -71,6 +71,17 @@ docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW --cap-add=SYS_ADMIN --
 
 You can then interact with this container directly via terminal.
 
+### Running the App
+You can run the app for development from within the container by following these steps:
+1. Open the src directory:
+    ```bash
+    cd src
+    ```
+1. Launch uvicorn with the --reload parameter for live reloading (good for interactive development):
+    ```bash
+    uvicorn main:app --reload
+    ```
+
 ## Assignment description
 
 ### Physical
