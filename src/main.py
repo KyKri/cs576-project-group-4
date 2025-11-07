@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 import uvicorn
 
 app = FastAPI()
@@ -9,6 +10,19 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+class UserEquipment(BaseModel):
+    id: int
+    ip: str
+    coordinates: tuple[int, int]
+    signal_quality: float
+
+class BaseStation(BaseModel):
+    id: int
+    ip: str
+    coordinates: tuple[int, int]
+    range: int
+    power_on: bool
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -35,33 +49,22 @@ async def init_grid():
 
 @app.post("/init/basestation")
 async def init_basestation():
-    # Logic to stop
     return {"message": "Init basestation received"}
 
 @app.post("/init/userequipment")
 async def init_userequipment():
-    # Logic to stop
     return {"message": "Init userequipment received"}
 
-@app.post("/update/basestation")
+@app.post("/update/basestation/{bs_id}")
 async def update_basestation():
-    # Logic to stop
-    return {"message": "Update basestation received"}
+    return {"message": "Update basestation received for {bs_id}"}
 
-@app.post("/update/userequipment")
+@app.post("/update/userequipment/{ue_id}")
 async def update_userequipment():
-    # Logic to stop
-    return {"message": "Update userequipment received"}
+    return {"message": "Update userequipment received for {ue_id}"}
 
 @app.websocket("/activity")
 async def activity_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
