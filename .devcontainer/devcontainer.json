@@ -3,7 +3,7 @@
   "build": {
     "context": "..",
     "dockerfile": "../Dockerfile",
-    "target": "dev"
+    "target": "runtime"
   },
   "customizations": {
     "vscode": {
