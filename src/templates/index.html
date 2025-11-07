@@ -28,19 +28,35 @@
 
         <div>
             <h2>Components</h2>
-            <div id="icon-tray">
-                {% for icon in ['fa-tower-cell', 'fa-mobile']%}
-                <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
-                {% endfor %}
+            <div id="components">
+                <div id="icon-tray">
+                    {% for icon in ['fa-tower-cell', 'fa-mobile']%}
+                    <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
+                    {% endfor %}
+                </div>
             </div>
         </div>       
 
         <div>
             <h2>Details</h2>
+            <div id="details">
+                {% if device_selected %}
+                <ul>
+                    <li>IP Address: {{device_selected.ip}}</li>
+                </ul>
+                {% else %}
+                <p>Select a device to see details</p>
+                {% endif %}
+            </div>
         </div>
 
         <div>
             <h2>Logs</h2>
+            <div id="logs">
+                {% for log in ['ue1 sending packet to ue2 via bs1', 'ue2 moved to bs2'] %}
+                <p>{{log}}</p>
+                {% endfor %}
+            </div>
         </div>
 
         <div id="websocket-example">
