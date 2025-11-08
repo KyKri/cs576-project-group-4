@@ -97,6 +97,24 @@ class PhysicalLayer:
     # Shannon throughput
     def rate_bps(self, sinr_linear: float) -> float:
         return self.t.eta_eff * self.t.bandwidth_hz * math.log2(1.0 + sinr_linear)
+    
+    def calc_upLatency(self, ue: Tuple[float,float], tower: Tuple[float,float], packet_size: int) -> int:
+        c = 3e8  # speed of light in m/s
+        distance =  dist(ue,tower)
+        prop = distance/ c
+        transmission = packet_size * 8/ (self.rate_bps(self.sinr_ul(distance)))
+        upLatency = prop + transmission
+        return upLatency*1e3
+    
+    def calc_downLatency(self, ue: Tuple[float,float], tower: Tuple[float,float], packet_size: int, towers) -> int:
+        c = 3e8  # speed of light in m/s
+        distance =  dist(ue,tower)
+        prop = distance/ c
+        interferer_ds = [dist((ue[0], ue[1]), (o.x, o.y)) for o in towers if o.on and (o.x != tower[0] and o.y != tower[1])]
+        transmission = packet_size * 8/(self.rate_bps(self.sinr_dl(distance, interferer_ds)))
+        downLatency = prop + transmission
+        return downLatency*1e3
+        
 
 # Geometry & nodes (star topology)
 class Tower:
@@ -152,9 +170,11 @@ def summarize_ue(ue: UE, towers: List[Tower], phy_map: dict[int, PhysicalLayer])
     sinr_ul = phy.sinr_ul(d_serv_m=d_serv)
     r_dl = phy.rate_bps(sinr_dl)
     r_ul = phy.rate_bps(sinr_ul)
+    l_ul = phy.calc_upLatency((ue.x, ue.y), (t.x, t.y), 1500)
+    l_dl = phy.calc_downLatency((ue.x, ue.y), (t.x, t.y), 1500, towers)
     return (f"UE{ue.id} @({ue.x:.0f},{ue.y:.0f}) → {t.name or ('Tower'+str(t.id))} [{t.tech.name}]\n"
             f"  d={d_serv:.1f} m, DL SINR={lin_to_db(sinr_dl):.1f} dB, UL SINR={lin_to_db(sinr_ul):.1f} dB\n"
-            f"  DL≈{r_dl/1e6:.1f} Mbps, UL≈{r_ul/1e6:.1f} Mbps")
+            f"  DL≈{r_dl/1e6:.1f} Mbps, UL≈{r_ul/1e6:.1f} Mbps, l_dl = {l_dl:.1f} ms, l_ul = {l_ul:.1f} ms")
 
 
 # Demo scenario
@@ -183,3 +203,4 @@ def demo() -> None:
 
 if __name__ == "__main__":
     demo()
+
