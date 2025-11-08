@@ -28,19 +28,23 @@ impl Cabernet {
     /// Poll an IPv4 frame received from any UE.
     /// Returns None if no frame is available.
     pub fn poll_frame(&mut self) -> Option<Vec<u8>> {
-        // self.buffer.pop().map(|b| b.to_vec())
         for ue in &mut self.ues {
-            let mut buf = [0u8; 1500];
-            match ue.recv(&mut buf) {
-                Ok(Some(nbytes)) => return Some(buf[..nbytes].to_vec()),
+            match ue.recv() {
+                Ok(Some(buf)) => {
+                    return Some(buf);
+                }
                 Ok(None) => continue,
                 Err(e) => {
-                    eprintln!("Error receiving frame from UE {}: {}", ue.ip, e);
+                    eprintln!("Error receiving from from UE {}: {}", ue.ip, e);
                     continue;
                 }
             }
         }
         None
+    }
+
+    pub fn poll_frame_from_ue(&mut self, ip: &str) -> Result<Option<Vec<u8>>> {
+        self.get_ue(ip)?.recv()
     }
 
     /// Create a new UE with the specified IP address and start polling frames from it.
