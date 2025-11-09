@@ -14,6 +14,7 @@ class UE(BaseModel):
         self.ip = ip
         self.connected_to: BaseStation | None = None
 
+
 class BaseStation(BaseModel):
     def __init__(self, id: int, l1tower: phy.Tower):
         self.tower = l1tower
@@ -61,38 +62,37 @@ class Glu:
             for bs in self.base_stations:
                 if not bs.tower.on:
                     continue
-                d_serv = phy.dist(
-                    (ue.l1ue.x, ue.l1ue.y), (bs.tower.x, bs.tower.y)
-                )
+                d_serv = phy.dist((ue.l1ue.x, ue.l1ue.y), (bs.tower.x, bs.tower.y))
                 if d_serv < best_dist:
                     best_dist = d_serv
                     best_bs = bs
             ue.connected_to = best_bs
 
-    def poll_ue(self, ip: str):
+    def poll_ue(self, ip: str) -> bool:
         frame = self.cabernet.poll_frame_from_ue(ip)
         # None means no frame available
-        if frame:
-            (src, dst) = extract_ips_from_frame(frame)
-            src_ue = self.get_ue_by_ip(src)
-            dst_ue = self.get_ue_by_ip(dst)
-            if (
-                not src_ue
-                or not dst_ue
-                or src_ue.connected_to is None
-                or dst_ue.connected_to is None
-            ):
-                return
-            upload_latency = src_ue.connected_to.tower.up_latency(
-                src_ue.l1ue, len(frame)
-            )
-            download_latency = dst_ue.connected_to.tower.down_latency(
-                dst_ue.l1ue,
-                len(frame),
-                [bs.tower for bs in self.base_stations],
-            )
-            total_latency = upload_latency + download_latency
-            heapq.heappush(self.queue, (now_in_ms() + total_latency, frame))
+        if not frame:
+            return False
+
+        (src, dst) = extract_ips_from_frame(frame)
+        src_ue = self.get_ue_by_ip(src)
+        dst_ue = self.get_ue_by_ip(dst)
+        if (
+            not src_ue
+            or not dst_ue
+            or src_ue.connected_to is None
+            or dst_ue.connected_to is None
+        ):
+            return False
+        upload_latency = src_ue.connected_to.tower.up_latency(src_ue.l1ue, len(frame))
+        download_latency = dst_ue.connected_to.tower.down_latency(
+            dst_ue.l1ue,
+            len(frame),
+            [bs.tower for bs in self.base_stations],
+        )
+        total_latency = upload_latency + download_latency
+        heapq.heappush(self.queue, (now_in_ms() + total_latency, frame))
+        return True
 
     def try_send_frame(self) -> tuple[bool, float]:
         if not self.queue:

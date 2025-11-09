@@ -7,21 +7,9 @@ Physical Layer for 4G/LTE & 5G
 
 """
 
-import enum
 import math
 import random
 from typing import List, Tuple, Optional
-
-
-# Helpers
-def db_to_lin(x_db: float) -> float:  # convert dB to linear
-    return 10 ** (x_db / 10.0)
-
-
-def lin_to_db(x: float) -> float:  # convert linear to dB
-    if x <= 0:
-        return -999.0
-    return 10.0 * math.log10(x)
 
 
 # Tech profiles (LTE/5G)
@@ -34,14 +22,15 @@ class TechProfile:
         self.bandwidth_hz = bandwidth_hz
         self.eta_eff = eta_eff
 
+    # Free space path loss
+    def pl1m_db(self) -> float:  # free space path loss at 1 meter
+        c = 3e8  # speed of light in m/s
+        lambda_wavelength = c / self.carrier_freq
+        return 20.0 * math.log10((4 * math.pi * 1) / lambda_wavelength)
+
 
 LTE_20 = TechProfile("LTE-20MHz", carrier_hz=2.6e9, bandwidth_hz=20e6, eta_eff=0.50)
 NR_100 = TechProfile("NR-100MHz", carrier_hz=3.5e9, bandwidth_hz=100e6, eta_eff=0.60)
-
-
-class TechProfiles(enum.Enum):
-    LTE_20 = LTE_20
-    NR_100 = NR_100
 
 
 # Physical layer constants
@@ -60,14 +49,11 @@ class UE:
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
-        self.serving = None  # tower id
 
 
 # Math stuff
 class Tower:
-    def __init__(
-        self, x: float, y: float, on: bool, tech: TechProfile
-    ):  # constructor
+    def __init__(self, x: float, y: float, on: bool, tech: TechProfile):  # constructor
         self.t = tech
         self.x = x
         self.y = y
@@ -77,16 +63,10 @@ class Tower:
         self.noise_dbm = BACKGROUND_NOISE + 10.0 * math.log10(self.t.bandwidth_hz)
         self.noise_mw = db_to_lin(self.noise_dbm)  # convert noise density to linear
 
-    # Free space path loss
-    def pl1m_db(self) -> float:  # free space path loss at 1 meter
-        c = 3e8  # speed of light in m/s
-        lambda_wavelength = c / self.t.carrier_freq
-        return 20.0 * math.log10((4 * math.pi * 1) / lambda_wavelength)
-
     # Real life path loss
     def pathloss_db(self, d_m: float) -> float:
         d = max(MIN_DISTANCE_M, d_m)
-        base = self.pl1m_db() + 10.0 * PATHLOSS_N * math.log10(d)
+        base = self.t.pl1m_db() + 10.0 * PATHLOSS_N * math.log10(d)
         shadow = self.rng.gauss(
             0.0, SHADOW_SIGMA_DB
         )  # signal changing randomly for realistic simulations
@@ -171,3 +151,13 @@ def dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
 # distance helper to calculate the distance between a UE and a tower
 def ue_tower_dist(ue: UE, tower: Tower) -> float:
     return dist((ue.x, ue.y), (tower.x, tower.y))
+
+
+def db_to_lin(x_db: float) -> float:  # convert dB to linear
+    return 10 ** (x_db / 10.0)
+
+
+def lin_to_db(x: float) -> float:  # convert linear to dB
+    if x <= 0:
+        return -999.0
+    return 10.0 * math.log10(x)
