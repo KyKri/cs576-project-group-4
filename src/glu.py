@@ -29,6 +29,7 @@ class Glu:
         self.ue_id_counter: int = 0
         self.tower_id_counter: int = 0
         self.cabernet: net.Cabernet = net.Cabernet()
+        self.event = threading.Event()
 
     def add_ue(self, ip: str, x: float, y: float) -> UE:
         l3ue = self.cabernet.create_ue(ip)
@@ -96,7 +97,7 @@ class Glu:
 
     def try_send_frame(self) -> tuple[bool, float]:
         if not self.queue:
-            return False, 10
+            return False, 0
         (send_time, frame) = self.queue[0]
         if send_time > now_in_ms():
             return False, send_time - now_in_ms()
@@ -111,17 +112,31 @@ class Glu:
                 return ue
         return None
 
-    def run_poll(self):
+    def __run_poll(self):
         while True:
             for ue in self.ues:
-                self.poll_ue(ue.ip)
-            time.sleep(100 / 1000.0)
+                polled = self.poll_ue(ue.ip)
+                if polled:
+                    self.event.set()
 
-    def run_send(self):
+    def __run_send(self):
         while True:
             sent, wait = self.try_send_frame()
             if not sent:
-                time.sleep(wait / 1000.0)
+                if wait == 0:
+                    self.event.wait()
+                else:
+                    self.event.wait(timeout=wait / 1000.0)
+
+    def run_poll(self) -> threading.Thread:
+        poll_t = threading.Thread(target=self.__run_poll, name="GluPoll", daemon=True)
+        poll_t.start()
+        return poll_t
+
+    def run_send(self) -> threading.Thread:
+        send_t = threading.Thread(target=self.__run_send, name="GluSend", daemon=True)
+        send_t.start()
+        return send_t
 
 
 def extract_ips_from_frame(frame: bytes) -> tuple[str, str]:
@@ -145,10 +160,8 @@ def demo():
     g.add_ue("10.0.0.3", 650.0, 140.0)
     g.syncronize_map()
     # multithreaded polling and sending would go here
-    poll_t = threading.Thread(target=g.run_poll, name="GluPoll", daemon=True)
-    send_t = threading.Thread(target=g.run_send, name="GluSend", daemon=True)
-    poll_t.start()
-    send_t.start()
+    poll_t = g.run_poll()
+    send_t = g.run_send()
     poll_t.join()
     send_t.join()
 
