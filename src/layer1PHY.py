@@ -99,7 +99,7 @@ class Tower:
 
     # Uplink SINR (linear), UE to tower
     def sinr_ul(
-        self, d_serv_m: float, cochannel_ue_ds_m: Optional[List[float]] = None
+        self, d_serv_m: float, cochannel_ue_ds_m: List[float]
     ) -> float:
         s_dbm = self.rx_power_dbm(UE_TX_POWER, UE_GAIN_DBI, BS_GAIN_DBI, d_serv_m)
         s_mw = db_to_lin(s_dbm)
@@ -120,9 +120,10 @@ class Tower:
         c = 3e8  # speed of light in m/s
         distance = ue_tower_dist(ue, self)
         prop = distance / c
-        transmission = packet_size * 8 / (self.rate_bps(self.sinr_ul(distance)))
-        upLatency = prop + transmission
-        return upLatency * 1e3
+        cochannel_ds = [ue_tower_dist(other_ue, self) for other_ue in cochannel_ues]
+        transmission = packet_size * 8 / (self.rate_bps(self.sinr_ul(distance, cochannel_ds)))
+        up_latency = prop + transmission
+        return up_latency * 1e3
 
     # Calculate downlink latency in ms
     # packet size in bytes
@@ -161,3 +162,4 @@ def lin_to_db(x: float) -> float:  # convert linear to dB
     if x <= 0:
         return -999.0
     return 10.0 * math.log10(x)
+
