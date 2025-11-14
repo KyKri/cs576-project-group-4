@@ -55,5 +55,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     fi
 
 COPY src/*.py ./
+COPY src/static ./static
+COPY src/templates ./templates
 
 CMD ["python", "main.py"]

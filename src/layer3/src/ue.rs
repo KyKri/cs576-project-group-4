@@ -3,6 +3,7 @@ use nix::libc;
 use nix::sched::{clone, setns, CloneFlags};
 use nix::sys::wait::waitpid;
 use nix::unistd::{getpid, Pid};
+use pyo3::{pyclass, pymethods};
 use std::process::Command;
 
 const STACK_SIZE: usize = 1024 * 1024; // 1 MB stack for child
@@ -11,6 +12,7 @@ const STACK_SIZE: usize = 1024 * 1024; // 1 MB stack for child
 /// Each UE has its own network namespace with a TUN interface which is used to route the entire
 /// network traffic to/from the UE.
 #[derive(Debug)]
+#[pyclass]
 pub struct UE {
     /// IP address assigned to the UE
     pub ip: String,
@@ -38,7 +40,10 @@ impl UE {
             pause_pid,
         }
     }
+}
 
+#[pymethods]
+impl UE {
     /// Change the IP address assigned to the UE
     pub fn change_ip(&self, new_ip: String) {
         assign_ip_to_tun(&self.iface, &new_ip);
@@ -55,10 +60,11 @@ impl UE {
     /// Receive IPv4 frames from the UE
     /// data is assumed to be the raw IPv4 packet (without Ethernet header)
     /// MTU is assumed to be 1500 bytes
-    pub fn recv(&self, buf: &mut [u8]) -> Result<Option<usize>> {
-        match self.iface.recv(buf) {
+    pub fn recv(&self) -> Result<Option<Vec<u8>>> {
+        let mut buf = [0u8; 1500];
+        match self.iface.recv(&mut buf) {
             Ok(nbytes) => match etherparse::Ipv4HeaderSlice::from_slice(&buf[..nbytes]) {
-                Ok(_) => Ok(Some(nbytes)),
+                Ok(_) => Ok(Some(buf[..nbytes].to_vec())),
                 Err(e) => {
                     eprintln!("Failed to parse IPv4 header: {e}");
                     Ok(None)
