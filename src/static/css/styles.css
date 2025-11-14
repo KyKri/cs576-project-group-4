@@ -1,5 +1,19 @@
 body {
+}
 
+h2{
+    margin-bottom: 5px;
+}
+p{
+    margin-top: 5px;
+}
+
+#interface-main{
+    display:flex;
+}
+#interface-main .right-column{
+    padding-left: 20px;
+    width: 300px;
 }
 
 #simulation {
@@ -10,8 +24,25 @@ body {
     background-color: #888686;
 }
 
+#component-control{
+    margin-bottom:5px;
+}
+#icon-tray{
+    padding: 5px;
+    background-color: lightgray;
+    border: 1px solid gray;
+    min-height:50px;
+}
+
 .font-awesome-icon {
-    width: 50px;
-    height: 50px;
     cursor: pointer;
+    width: auto !important;
+    margin: 2px;
+}
+.font-awesome-icon.selected{
+    color: green;
+}
+
+.font-awesome-icon::before{
+    font-size:1em;
 }

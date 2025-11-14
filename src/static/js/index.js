@@ -13,6 +13,23 @@ function sendMessage(event) {
     ws.send(input.value)
     input.value = ''
     event.preventDefault()
+};
+
+function addBaseStation(){
+    const newBaseStation = document.createElement('span');
+    newBaseStation.classList.add('font-awesome-icon','fas','fa-solid','fa-tower-cell');
+    newBaseStation.addEventListener('mousedown', startDrag);
+    newBaseStation.addEventListener('click', selectDevice);
+    document.getElementById('icon-tray').appendChild(newBaseStation);
+    return newBaseStation;
+}
+function addEndUser(){
+    const newEndUser = document.createElement('span');
+    newEndUser.classList.add('font-awesome-icon','fas','fa-solid','fa-mobile');
+    newEndUser.addEventListener('mousedown', startDrag);
+    newEndUser.addEventListener('click', selectDevice);
+    document.getElementById('icon-tray').appendChild(newEndUser);
+    return newEndUser;
 }
 
 async function control(action) {
