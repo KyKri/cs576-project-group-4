@@ -20,6 +20,7 @@ class SimulationConfig(BaseModel):
     width: conint(gt=0)
     conversion: conint(gt=0)
     network_type: Literal["LTE_20", "NR_100"]
+    starting_ip: str
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -50,6 +51,7 @@ async def init_grid(payload: SimulationConfig):
     width = payload.width
     conversion = payload.conversion
     network_type = payload.network_type
+    starting_ip = payload.starting_ip
 
     return {
         "ok": True,

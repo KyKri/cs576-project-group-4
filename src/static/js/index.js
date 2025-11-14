@@ -57,6 +57,7 @@ document.getElementById("configuration").addEventListener("submit", async functi
     const width = parseInt(document.getElementById("grid-width").value, 10);
     const conversion = parseInt(document.getElementById("grid-conversion").value, 10);
     const networkType = document.getElementById("network-type").value;
+    const startingIP = document.getElementById("starting-ip").value;
 
     // Rudimentary input sanity checks
     if (isNaN(height) || isNaN(width) || isNaN(conversion) || height <= 0 || width <= 0 || conversion <= 0) {
@@ -64,8 +65,20 @@ document.getElementById("configuration").addEventListener("submit", async functi
         return;
     }
 
+    startingIPList = startingIP.split(".");
+    startingIPValid = false;
+
+    for (let octet of startingIPList) {
+        octet = parseInt(octet, 10);
+
+        if (isNaN(octet) || octet > 255 || octet < 0) {
+            alert("Please enter valid IP address");
+            return;
+        }
+    }
+
     resizeCanvas(height, width);
-    await initSimulation(height, width, conversion, networkType);
+    await initSimulation(height, width, conversion, networkType, startingIP);
 });
 
 // Resize canvas based on configuration form
@@ -79,8 +92,8 @@ function resizeCanvas(height, width) {
 }
 
 // Let backend know about simulation configuration
-async function initSimulation(height, width, conversion, networkType) {
-    console.log(height, width, conversion, networkType);
+async function initSimulation(height, width, conversion, networkType, startingIP) {
+    console.log(height, width, conversion, networkType, startingIP);
 
     try {
         const response = await fetch('/init/simulation', {
@@ -93,6 +106,7 @@ async function initSimulation(height, width, conversion, networkType) {
                 width: width,
                 conversion: conversion,
                 network_type: networkType,
+                starting_ip: startingIP,
             })
         });
 
