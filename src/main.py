@@ -2,7 +2,8 @@ from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
+from typing import Literal
 import uvicorn
 from glu import Glu
 import glu
@@ -14,6 +15,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+class SimulationConfig(BaseModel):
+    height: conint(gt=0)
+    width: conint(gt=0)
+    conversion: conint(gt=0)
+    network_type: Literal["LTE_20", "NR_100"]
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -38,10 +44,17 @@ async def control_stop():
     return {"message": "Stop action received"}
 
 
-@app.post("/init/grid")
-async def init_grid():
-    return {"message": "Init grid received"}
+@app.post("/init/simulation")
+async def init_grid(payload: SimulationConfig):
+    height = payload.height
+    width = payload.width
+    conversion = payload.conversion
+    network_type = payload.network_type
 
+    return {
+        "ok": True,
+        "message": "Grid initialized",
+    }
 
 @app.post("/init/basestation")
 async def init_basestation(x: float, y: float, tech: str):
