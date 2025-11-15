@@ -7,7 +7,7 @@ import threading
 import ipaddress
 
 
-class UE(BaseModel):
+class UE():
     def __init__(self, id: int, l1ue: phy.UE, l3ue: net.UE, ip: str):
         self.l1ue = l1ue
         self.l3ue = l3ue
@@ -16,7 +16,7 @@ class UE(BaseModel):
         self.connected_to: BaseStation | None = None
 
 
-class BaseStation(BaseModel):
+class BaseStation():
     def __init__(self, id: int, l1tower: phy.Tower):
         self.tower = l1tower
         self.id = id
@@ -52,9 +52,9 @@ class Glu:
                 break
 
     def add_tower(
-        self, tech: phy.TechProfile, x: float, y: float, on: bool = True
+        self, x: float, y: float, on: bool = True
     ) -> BaseStation:
-        l1tower = phy.Tower(x, y, on, tech)
+        l1tower = phy.Tower(x, y, on, self.tech_profile)
         bs = BaseStation(self.tower_id_counter, l1tower)
         self.base_stations.append(bs)
         self.tower_id_counter += 1
