@@ -7,13 +7,14 @@ from typing import Literal
 import uvicorn
 from glu import Glu
 import glu
+from pathlib import Path
 
 app = FastAPI()
 g = Glu()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 class SimulationConfig(BaseModel):
     height: confloat(gt=0)
@@ -21,6 +22,10 @@ class SimulationConfig(BaseModel):
     pixels_per_meter: confloat(gt=0)
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
+
+class BaseStationInit(BaseModel):
+    x: float
+    y: float
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -63,10 +68,12 @@ async def init_simulation(payload: SimulationConfig):
     }
 
 @app.post("/init/basestation")
-async def init_basestation(x: float, y: float):
-    g.add_tower(x=x, y=y, on=True)
+async def init_basestation(payload: BaseStationInit):
+    x = payload.x
+    y = payload.y
+    bs = g.add_tower(x=x, y=y, on=True)
 
-    return {"message": "Init basestation received"}
+    return {"id": bs.id, "on": True, "status": "created"}
 
 
 @app.post("/init/userequipment")
