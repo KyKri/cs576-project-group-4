@@ -32,8 +32,8 @@ class Glu:
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
         self.tech_profile: phy.TechProfile = phy.LTE_20
-        self.starting_ip: str = "10.0.0.1"
-        self.last_assigned_ip: str = None
+        self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
+        self.last_assigned_ip: ipaddress.IPv4Address = None
 
     def add_ue(self, ip: str, x: float, y: float) -> UE:
         l3ue = self.cabernet.create_ue(ip)
@@ -153,18 +153,16 @@ class Glu:
         self.tech_profile = new_tech_profile
 
     def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
-        self.starting_ip = ip
+        self.starting_ip = ipaddress.ip_address(ip)
 
-    def generate_next_ip(self) -> str:
+    def generate_next_ip(self) -> ipaddress.IPv4Address:
         last_ip = self.last_assigned_ip
 
         if last_ip is None:
-            next_ip = ipaddress.ip_address(self.starting_ip)
+            next_ip = self.starting_ip
         else:
-            last_ip = ipaddress.ip_address(last_ip)
-            next_ip = ipaddress.ip_address(int(last_ip) + 1)
+            next_ip = last_ip + 1
 
-        next_ip = str(next_ip)
         self.last_assigned_ip = next_ip
 
         return next_ip
