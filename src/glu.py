@@ -31,6 +31,7 @@ class Glu:
         self.tower_id_counter: int = 0
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
+        self.pixels_per_meter: float = 1.0
         self.tech_profile: phy.TechProfile = phy.LTE_20
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
         self.last_assigned_ip: ipaddress.IPv4Address = None
@@ -166,6 +167,9 @@ class Glu:
         self.last_assigned_ip = next_ip
 
         return next_ip
+    
+    def set_pixels_per_meter(self, ppm: float) -> None:
+        self.pixels_per_meter = ppm
 
 
 def extract_ips_from_frame(frame: bytes) -> tuple[str, str]:

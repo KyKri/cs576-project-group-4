@@ -53,32 +53,40 @@ async function control(action) {
 // Handle simulation configuration
 document.getElementById("configuration").addEventListener("submit", async function(event) {
     event.preventDefault();
-    const height = parseInt(document.getElementById("grid-height").value, 10);
-    const width = parseInt(document.getElementById("grid-width").value, 10);
-    const conversion = parseInt(document.getElementById("grid-conversion").value, 10);
+    const height = parseFloat(document.getElementById("grid-height").value);
+    const width = parseFloat(document.getElementById("grid-width").value);
+    const pixelsPerMeter = parseFloat(document.getElementById("grid-ppm").value);
     const networkType = document.getElementById("network-type").value;
     const startingIP = document.getElementById("starting-ip").value;
 
     // Rudimentary input sanity checks
-    if (isNaN(height) || isNaN(width) || isNaN(conversion) || height <= 0 || width <= 0 || conversion <= 0) {
+    if (isNaN(height) || isNaN(width) || isNaN(pixelsPerMeter) || height <= 0 || width <= 0 || pixelsPerMeter <= 0) {
         alert("Please enter valid positive numbers for grid size.");
         return;
     }
 
-    startingIPList = startingIP.split(".");
-    startingIPValid = false;
+    let startingIPList = startingIP.split(".");
+    let startingIPValid = true;
+    
+    if (startingIPList.length !== 4) {
+        startingIPValid = false
+    }
 
     for (let octet of startingIPList) {
         octet = parseInt(octet, 10);
 
         if (isNaN(octet) || octet > 255 || octet < 0) {
-            alert("Please enter valid IP address");
-            return;
+            startingIPValid = false
         }
     }
 
+    if (startingIPValid !== true) {
+        alert("Please enter a valid IPv4 address");
+        return;
+    }
+
     resizeCanvas(height, width);
-    await initSimulation(height, width, conversion, networkType, startingIP);
+    await initSimulation(height, width, pixelsPerMeter, networkType, startingIP);
 });
 
 // Resize canvas based on configuration form
@@ -92,8 +100,8 @@ function resizeCanvas(height, width) {
 }
 
 // Let backend know about simulation configuration
-async function initSimulation(height, width, conversion, networkType, startingIP) {
-    console.log(height, width, conversion, networkType, startingIP);
+async function initSimulation(height, width, pixelsPerMeter, networkType, startingIP) {
+    console.log(height, width, pixelsPerMeter, networkType, startingIP);
 
     try {
         const response = await fetch('/init/simulation', {
@@ -104,7 +112,7 @@ async function initSimulation(height, width, conversion, networkType, startingIP
             body: JSON.stringify ({
                 height: height,
                 width: width,
-                conversion: conversion,
+                pixels_per_meter: pixelsPerMeter,
                 network_type: networkType,
                 starting_ip: startingIP,
             })

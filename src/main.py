@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, confloat
 from typing import Literal
 import uvicorn
 from glu import Glu
@@ -16,9 +16,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 class SimulationConfig(BaseModel):
-    height: conint(gt=0)
-    width: conint(gt=0)
-    conversion: conint(gt=0)
+    height: confloat(gt=0)
+    width: confloat(gt=0)
+    pixels_per_meter: confloat(gt=0)
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
 
@@ -49,7 +49,7 @@ async def control_stop():
 async def init_grid(payload: SimulationConfig):
     height = payload.height
     width = payload.width
-    conversion = payload.conversion
+    pixels_per_meter = payload.pixels_per_meter
     network_type = payload.network_type
     starting_ip = payload.starting_ip
 
@@ -59,15 +59,8 @@ async def init_grid(payload: SimulationConfig):
     }
 
 @app.post("/init/basestation")
-async def init_basestation(x: float, y: float, tech: str):
-    import layer1PHY as phy
-
-    tech_profile = phy.LTE_20  # default
-    if tech == "LTE_20":
-        tech_profile = phy.LTE_20
-    elif tech == "NR_100":
-        tech_profile = phy.NR_100
-    g.add_tower(tech=tech_profile, x=x, y=y)
+async def init_basestation(x: float, y: float):
+    g.add_tower(x=x, y=y, on=True)
 
     return {"message": "Init basestation received"}
 
