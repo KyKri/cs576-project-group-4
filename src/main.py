@@ -27,28 +27,29 @@ class BaseStationInit(BaseModel):
     x: float
     y: float
 
+class BaseStationUpdate(BaseModel):
+    x: float
+    y: float
+    on: bool
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
-
 
 @app.post("/control/start")
 async def control_start():
     # Logic to start
     return {"message": "Start action received"}
 
-
 @app.post("/control/pause")
 async def control_pause():
     # Logic to pause
     return {"message": "Pause action received"}
 
-
 @app.post("/control/stop")
 async def control_stop():
     # Logic to stop
     return {"message": "Stop action received"}
-
 
 @app.post("/init/simulation")
 async def init_simulation(payload: SimulationConfig):
@@ -67,36 +68,67 @@ async def init_simulation(payload: SimulationConfig):
         "message": "Simulation Initialized",
     }
 
+# Sample call:
+"""
+curl -X POST http://localhost:8000/init/basestation \
+-H "Content-Type: application/json" \
+-d '{"x": 100, "y": 100}'
+"""
 @app.post("/init/basestation")
 async def init_basestation(payload: BaseStationInit):
     x = payload.x
     y = payload.y
     bs = g.add_tower(x=x, y=y, on=True)
 
-    return {"id": bs.id, "on": True, "status": "created"}
-
+    return {
+        "message": f"BaseStation {bs.id} created successfully",
+        "base_station": {
+            "id": bs.id,
+            "x": bs.tower.x,
+            "y": bs.tower.y,
+            "on": bs.tower.on,
+        },
+    }
 
 @app.post("/init/userequipment")
 async def init_userequipment(x: float, y: float, ip: str):
     g.add_ue(ip=ip, x=x, y=y)
     return {"message": "Init userequipment received"}
 
-
+# Sample call
+"""
+curl -X POST http://localhost:8000/update/basestation/0 \
+-H "Content-Type: application/json" \
+-d '{"x": 110, "y": 110, "on": false}'
+"""
 @app.post("/update/basestation/{bs_id}")
-async def update_basestation(
-    bs_id: int, x: float | None = None, y: float | None = None, on: bool | None = None
-):
+async def update_basestation(bs_id: int, payload: BaseStationUpdate):
+    x = payload.x
+    y = payload.y
+    on = payload.on
+
+    updated_bs = None
+
     for bs in g.base_stations:
         if bs.id == bs_id:
-            if x:
-                bs.tower.x = x
-            if y:
-                bs.tower.y = y
-            if on:
-                bs.tower.on = on
+            bs.tower.x = x
+            bs.tower.y = y
+            bs.tower.on = on
+            updated_bs = bs
             break
-    return {"message": "Update basestation received for {bs_id}"}
 
+    if not updated_bs:
+        return {"error": f"BaseStation with id {bs_id} not found"}
+
+    return {
+        "message": f"BaseStation {bs_id} updated successfully",
+        "base_station": {
+            "id": updated_bs.id,
+            "x": updated_bs.tower.x,
+            "y": updated_bs.tower.y,
+            "on": updated_bs.tower.on
+        }
+    }
 
 @app.post("/update/userequipment/{ue_id}")
 async def update_userequipment(
