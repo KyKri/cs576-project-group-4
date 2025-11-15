@@ -46,16 +46,20 @@ async def control_stop():
 
 
 @app.post("/init/simulation")
-async def init_grid(payload: SimulationConfig):
+async def init_simulation(payload: SimulationConfig):
     height = payload.height
     width = payload.width
     pixels_per_meter = payload.pixels_per_meter
     network_type = payload.network_type
     starting_ip = payload.starting_ip
 
+    g.set_tech_profile(network_type)
+    g.set_starting_ip(starting_ip)
+    g.set_pixels_per_meter(pixels_per_meter)
+
     return {
         "ok": True,
-        "message": "Grid initialized",
+        "message": "Simulation Initialized",
     }
 
 @app.post("/init/basestation")
