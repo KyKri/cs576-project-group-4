@@ -27,6 +27,32 @@
         </div>
 
         <div>
+            <h2>Configuration</h2>
+            <form id="configuration">
+                <fieldset>
+                    <legend>Grid Size</legend>
+                    <label for="grid-height">Height (px)</label>
+                    <input type="text" name="grid-height" id="grid-height" value="500">
+                    <label for="grid-width">Width (px)</label>
+                    <input type="text" name="grid-width" id="grid-width" value="500">
+                    <label for="grid-ppm">Pixels per Meter</label>
+                    <input type="text" name="grid-ppm" id="grid-ppm" value="1">
+                </fieldset>
+                <fieldset>
+                    <legend>Cellular Network</legend>
+                    <label for="network-type">Network Type</label>
+                    <select name="network-type" id="network-type">
+                        <option value="LTE_20" selected="true">4G LTE</option>
+                        <option value="NR_100">5G</option>
+                    </select>
+                    <label for="starting-ip">Starting IP Address</label>
+                    <input type="text" name="starting-ip" id="starting-ip" value="10.0.0.1">
+                </fieldset>
+                <button type="submit">Configure</button>
+            </form>
+        </div>
+
+        <div>
             <h2>Components</h2>
             <div id="components">
                 <div id="icon-tray">
