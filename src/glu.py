@@ -4,6 +4,7 @@ import layer3 as net
 import heapq
 import time
 import threading
+import ipaddress
 
 
 class UE(BaseModel):
@@ -30,6 +31,9 @@ class Glu:
         self.tower_id_counter: int = 0
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
+        self.tech_profile: phy.TechProfile = phy.LTE_20
+        self.starting_ip: str = "10.0.0.1"
+        self.last_assigned_ip: str = None
 
     def add_ue(self, ip: str, x: float, y: float) -> UE:
         l3ue = self.cabernet.create_ue(ip)
@@ -137,6 +141,33 @@ class Glu:
         send_t = threading.Thread(target=self.__run_send, name="GluSend", daemon=True)
         send_t.start()
         return send_t
+
+    def set_tech_profile(self, tech: str = None) -> None:
+        new_tech_profile = phy.LTE_20 # default
+
+        if tech == "LTE_20":
+            new_tech_profile = phy.LTE_20
+        elif tech == "NR_100":
+            new_tech_profile = phy.NR_100
+        
+        self.tech_profile = new_tech_profile
+
+    def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
+        self.starting_ip = ip
+
+    def generate_next_ip(self) -> str:
+        last_ip = self.last_assigned_ip
+
+        if last_ip is None:
+            next_ip = ipaddress.ip_address(self.starting_ip)
+        else:
+            last_ip = ipaddress.ip_address(last_ip)
+            next_ip = ipaddress.ip_address(int(last_ip) + 1)
+
+        next_ip = str(next_ip)
+        self.last_assigned_ip = next_ip
+
+        return next_ip
 
 
 def extract_ips_from_frame(frame: bytes) -> tuple[str, str]:
