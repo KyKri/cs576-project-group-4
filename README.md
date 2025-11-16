@@ -66,7 +66,7 @@ docker build . -f Dockerfile -t cellnetsim:latest
 ```
 1. Run the container, with capabilities for TUN/TAP:
 ```bash
-docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW --cap-add=SYS_ADMIN --device=/dev/net/tun:/dev/net/tun cellnetsim:latest bash
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW --cap-add=SYS_ADMIN --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
 
 You can then interact with this container directly via terminal.

@@ -36,15 +36,18 @@ class Glu:
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
         self.last_assigned_ip: ipaddress.IPv4Address = None
 
-    def add_ue(self, ip: str, x: float, y: float) -> UE:
+    def add_ue(self, x: float, y: float) -> UE:
+        ip = str(self.generate_next_ip())
         l3ue = self.cabernet.create_ue(ip)
         l1ue = phy.UE(x, y)
         ue = UE(self.ue_id_counter, l1ue, l3ue, ip)
         self.ues.append(ue)
         self.ue_id_counter += 1
+        self.syncronize_map()
         return ue
 
-    def update_ue_ip(self, ue_id: int, new_ip: str):
+    def update_ue_ip(self, ue_id: int):
+        new_ip = str(self.generate_next_ip())
         for ue in self.ues:
             if ue.id == ue_id:
                 self.cabernet.change_ip(ue.ip, new_ip)
@@ -58,6 +61,7 @@ class Glu:
         bs = BaseStation(self.tower_id_counter, l1tower)
         self.base_stations.append(bs)
         self.tower_id_counter += 1
+        self.syncronize_map()
         return bs
 
     # update the UE to tower associations based on current positions and tower states
@@ -188,9 +192,9 @@ def demo():
     g.add_tower(phy.NR_100, 200.0, 300.0)
     g.add_tower(phy.NR_100, 600.0, 300.0)
     g.add_tower(phy.LTE_20, 400.0, 150.0)
-    g.add_ue("10.0.0.5", 150.0, 250.0)
-    g.add_ue("10.0.0.4", 500.0, 350.0)
-    g.add_ue("10.0.0.3", 650.0, 140.0)
+    g.add_ue(150.0, 250.0)
+    g.add_ue(500.0, 350.0)
+    g.add_ue(650.0, 140.0)
     g.syncronize_map()
     # multithreaded polling and sending would go here
     poll_t = g.run_poll()

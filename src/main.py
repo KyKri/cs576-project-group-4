@@ -32,6 +32,15 @@ class BaseStationUpdate(BaseModel):
     y: float
     on: bool
 
+class UserEquipmentInit(BaseModel):
+    x: float
+    y: float
+
+class UserEquipmentUpdate(BaseModel):
+    x: float
+    y: float
+    change_ip: bool
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
@@ -90,10 +99,32 @@ async def init_basestation(payload: BaseStationInit):
         },
     }
 
+# Sample call:
+"""
+curl -X POST http://localhost:8000/init/userequipment \
+-H "Content-Type: application/json" \
+-d '{"x": 150, "y": 150}'
+"""
 @app.post("/init/userequipment")
-async def init_userequipment(x: float, y: float, ip: str):
-    g.add_ue(ip=ip, x=x, y=y)
-    return {"message": "Init userequipment received"}
+async def init_userequipment(payload: UserEquipmentInit):
+    x = payload.x
+    y = payload.y
+
+    ue = g.add_ue(x=x, y=y)
+    bs = -1
+    if ue.connected_to is not None:
+        bs = ue.connected_to.id
+
+    return {
+        "message": f"UserEquipment {ue.id} created successfully",
+        "user_equipment": {
+            "id": ue.id,
+            "x": ue.l1ue.x,
+            "y": ue.l1ue.y,
+            "ip": ue.ip,
+            "bs": bs,
+        }
+    }
 
 # Sample call
 """
@@ -114,6 +145,7 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
             bs.tower.x = x
             bs.tower.y = y
             bs.tower.on = on
+            g.syncronize_map()
             updated_bs = bs
             break
 
@@ -130,21 +162,47 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
         }
     }
 
+# Sample call:
+"""
+curl -X POST http://localhost:8000/update/userequipment/0 \
+-H "Content-Type: application/json" \
+-d '{"x": 250, "y": 250, "change_ip": false}'
+"""
 @app.post("/update/userequipment/{ue_id}")
-async def update_userequipment(
-    ue_id: int, x: float | None = None, y: float | None = None, ip: str | None = None
-):
+async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
+    x = payload.x
+    y = payload.y
+    change_ip = payload.change_ip
+
+    updated_ue = None
+
     for ue in g.ues:
         if ue.id == ue_id:
-            if x:
-                ue.l1ue.x = x
-            if y:
-                ue.l1ue.y = y
-            if ip:
-                ue.ip = ip
+            ue.l1ue.x = x
+            ue.l1ue.y = y
+            if change_ip:
+                g.update_ue_ip(ue.id)
+            g.syncronize_map()
+            updated_ue = ue
             break
-    return {"message": "Update userequipment received for {ue_id}"}
 
+    if not updated_ue:
+        return {"error": f"UserEquipment with id {ue_id} not found"}
+
+    bs = -1
+    if updated_ue.connected_to is not None:
+        bs = updated_ue.connected_to.id
+
+    return {
+        "message": f"UserEquipment {ue_id} updated successfully",
+        "user_equipment": {
+            "id": updated_ue.id,
+            "x": updated_ue.l1ue.x,
+            "y": updated_ue.l1ue.y,
+            "ip": updated_ue.ip,
+            "bs": bs,
+        }
+    }
 
 @app.websocket("/activity")
 async def activity_endpoint(websocket: WebSocket):
@@ -152,7 +210,6 @@ async def activity_endpoint(websocket: WebSocket):
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(f"Message text was: {data}")
-
 
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
@@ -162,7 +219,6 @@ async def transfer_endpoint(websocket: WebSocket):
             _, data = frame
             (src, dst) = glu.extract_ips_from_frame(data)
             await websocket.send_text(f"{src} -> {dst}: {len(data)} bytes")
-
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000)
