@@ -184,10 +184,10 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
             break
 
     if not updated_ue:
-        return {"error": f"BaseStation with id {ue_id} not found"}
+        return {"error": f"UserEquipment with id {ue_id} not found"}
 
     return {
-        "message": f"BaseStation {ue_id} updated successfully",
+        "message": f"UserEquipment {ue_id} updated successfully",
         "user_equipment": {
             "id": updated_ue.id,
             "x": updated_ue.l1ue.x,
