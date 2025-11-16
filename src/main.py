@@ -111,6 +111,9 @@ async def init_userequipment(payload: UserEquipmentInit):
     y = payload.y
 
     ue = g.add_ue(x=x, y=y)
+    bs = -1
+    if ue.connected_to is not None:
+        bs = ue.connected_to.id
 
     return {
         "message": f"UserEquipment {ue.id} created successfully",
@@ -119,7 +122,7 @@ async def init_userequipment(payload: UserEquipmentInit):
             "x": ue.l1ue.x,
             "y": ue.l1ue.y,
             "ip": ue.ip,
-            "bs": ue.connected_to.id
+            "bs": bs,
         }
     }
 
@@ -142,8 +145,8 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
             bs.tower.x = x
             bs.tower.y = y
             bs.tower.on = on
-            updated_bs = bs
             g.syncronize_map()
+            updated_bs = bs
             break
 
     if not updated_bs:
@@ -163,7 +166,7 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
 """
 curl -X POST http://localhost:8000/update/userequipment/0 \
 -H "Content-Type: application/json" \
--d '{"x": 250, "y": 250, "change_ip": true}'
+-d '{"x": 250, "y": 250, "change_ip": false}'
 """
 @app.post("/update/userequipment/{ue_id}")
 async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
@@ -179,12 +182,16 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
             ue.l1ue.y = y
             if change_ip:
                 g.update_ue_ip(ue.id)
-            updated_ue = ue
             g.syncronize_map()
+            updated_ue = ue
             break
 
     if not updated_ue:
         return {"error": f"UserEquipment with id {ue_id} not found"}
+
+    bs = -1
+    if updated_ue.connected_to is not None:
+        bs = updated_ue.connected_to.id
 
     return {
         "message": f"UserEquipment {ue_id} updated successfully",
@@ -193,7 +200,7 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
             "x": updated_ue.l1ue.x,
             "y": updated_ue.l1ue.y,
             "ip": updated_ue.ip,
-            "bs": updated_ue.connected_to.id,
+            "bs": bs,
         }
     }
 
