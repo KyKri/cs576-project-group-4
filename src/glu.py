@@ -4,9 +4,10 @@ import layer3 as net
 import heapq
 import time
 import threading
+import ipaddress
 
 
-class UE(BaseModel):
+class UE():
     def __init__(self, id: int, l1ue: phy.UE, l3ue: net.UE, ip: str):
         self.l1ue = l1ue
         self.l3ue = l3ue
@@ -15,7 +16,7 @@ class UE(BaseModel):
         self.connected_to: BaseStation | None = None
 
 
-class BaseStation(BaseModel):
+class BaseStation():
     def __init__(self, id: int, l1tower: phy.Tower):
         self.tower = l1tower
         self.id = id
@@ -30,16 +31,23 @@ class Glu:
         self.tower_id_counter: int = 0
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
+        self.pixels_per_meter: float = 1.0
+        self.tech_profile: phy.TechProfile = phy.LTE_20
+        self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
+        self.last_assigned_ip: ipaddress.IPv4Address = None
 
-    def add_ue(self, ip: str, x: float, y: float) -> UE:
+    def add_ue(self, x: float, y: float) -> UE:
+        ip = str(self.generate_next_ip())
         l3ue = self.cabernet.create_ue(ip)
         l1ue = phy.UE(x, y)
         ue = UE(self.ue_id_counter, l1ue, l3ue, ip)
         self.ues.append(ue)
         self.ue_id_counter += 1
+        self.syncronize_map()
         return ue
 
-    def update_ue_ip(self, ue_id: int, new_ip: str):
+    def update_ue_ip(self, ue_id: int):
+        new_ip = str(self.generate_next_ip())
         for ue in self.ues:
             if ue.id == ue_id:
                 self.cabernet.change_ip(ue.ip, new_ip)
@@ -47,12 +55,13 @@ class Glu:
                 break
 
     def add_tower(
-        self, tech: phy.TechProfile, x: float, y: float, on: bool = True
+        self, x: float, y: float, on: bool = True
     ) -> BaseStation:
-        l1tower = phy.Tower(x, y, on, tech)
+        l1tower = phy.Tower(x, y, on, self.tech_profile)
         bs = BaseStation(self.tower_id_counter, l1tower)
         self.base_stations.append(bs)
         self.tower_id_counter += 1
+        self.syncronize_map()
         return bs
 
     # update the UE to tower associations based on current positions and tower states
@@ -138,6 +147,34 @@ class Glu:
         send_t.start()
         return send_t
 
+    def set_tech_profile(self, tech: str = None) -> None:
+        new_tech_profile = phy.LTE_20 # default
+
+        if tech == "LTE_20":
+            new_tech_profile = phy.LTE_20
+        elif tech == "NR_100":
+            new_tech_profile = phy.NR_100
+        
+        self.tech_profile = new_tech_profile
+
+    def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
+        self.starting_ip = ipaddress.ip_address(ip)
+
+    def generate_next_ip(self) -> ipaddress.IPv4Address:
+        last_ip = self.last_assigned_ip
+
+        if last_ip is None:
+            next_ip = self.starting_ip
+        else:
+            next_ip = last_ip + 1
+
+        self.last_assigned_ip = next_ip
+
+        return next_ip
+    
+    def set_pixels_per_meter(self, ppm: float) -> None:
+        self.pixels_per_meter = ppm
+
 
 def extract_ips_from_frame(frame: bytes) -> tuple[str, str]:
     # assuming IPv4 and no options
@@ -155,9 +192,9 @@ def demo():
     g.add_tower(phy.NR_100, 200.0, 300.0)
     g.add_tower(phy.NR_100, 600.0, 300.0)
     g.add_tower(phy.LTE_20, 400.0, 150.0)
-    g.add_ue("10.0.0.5", 150.0, 250.0)
-    g.add_ue("10.0.0.4", 500.0, 350.0)
-    g.add_ue("10.0.0.3", 650.0, 140.0)
+    g.add_ue(150.0, 250.0)
+    g.add_ue(500.0, 350.0)
+    g.add_ue(650.0, 140.0)
     g.syncronize_map()
     # multithreaded polling and sending would go here
     poll_t = g.run_poll()
