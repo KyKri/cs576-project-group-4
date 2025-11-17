@@ -8,73 +8,84 @@
     </head>
     <body>
         <h1>CellNetSim</h1>
-        <div>
-            <canvas id="simulation" width="500" height="500"></canvas>
-        </div>
-        <div>
-            <h2>Controls</h2>
-            <form id="controls">
-                <button onclick="event.preventDefault(); control('start')">
-                    <i class="fas fa-play"></i> Start
-                </button>
-                <button onclick="event.preventDefault(); control('pause')">
-                    <i class="fas fa-pause"></i> Pause
-                </button>
-                <button onclick="event.preventDefault(); control('stop')">
-                    <i class="fas fa-stop"></i> Stop
-                </button>
-            </form>
-        </div>
-
-        <div>
-            <h2>Configuration</h2>
-            <form id="configuration">
-                <fieldset>
-                    <legend>Grid Size</legend>
-                    <label for="grid-height">Height (px)</label>
-                    <input type="text" name="grid-height" id="grid-height" value="500">
-                    <label for="grid-width">Width (px)</label>
-                    <input type="text" name="grid-width" id="grid-width" value="500">
-                    <label for="grid-ppm">Pixels per Meter</label>
-                    <input type="text" name="grid-ppm" id="grid-ppm" value="1">
-                </fieldset>
-                <fieldset>
-                    <legend>Cellular Network</legend>
-                    <label for="network-type">Network Type</label>
-                    <select name="network-type" id="network-type">
-                        <option value="LTE_20" selected="true">4G LTE</option>
-                        <option value="NR_100">5G</option>
-                    </select>
-                    <label for="starting-ip">Starting IP Address</label>
-                    <input type="text" name="starting-ip" id="starting-ip" value="10.0.0.1">
-                </fieldset>
-                <button type="submit">Configure</button>
-            </form>
-        </div>
-
-        <div>
-            <h2>Components</h2>
-            <div id="components">
-                <div id="icon-tray">
-                    {% for icon in ['fa-tower-cell', 'fa-mobile']%}
-                    <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
-                    {% endfor %}
+        <section id="interface-main">
+            <div class="left-column">
+                <div>
+                    <canvas id="simulation" width="500" height="500"></canvas>
                 </div>
             </div>
-        </div>       
+            <div class="right-column">
+                <div>
+                    <h2>Controls</h2>
+                    <form id="controls">
+                        <button onclick="event.preventDefault(); control('start')">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button onclick="event.preventDefault(); control('pause')">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button onclick="event.preventDefault(); control('stop')">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </form>
+                </div>
+                <div>
+                    <h2>Configuration</h2>
+                    <form id="configuration">
+                        <fieldset>
+                            <legend>Grid Size</legend>
+                            <label for="grid-height">Height (px)</label>
+                            <input type="text" name="grid-height" id="grid-height" value="500">
+                            <label for="grid-width">Width (px)</label>
+                            <input type="text" name="grid-width" id="grid-width" value="500">
+                            <label for="grid-ppm">Pixels per Meter</label>
+                            <input type="text" name="grid-ppm" id="grid-ppm" value="1">
+                        </fieldset>
+                        <fieldset>
+                            <legend>Cellular Network</legend>
+                            <label for="network-type">Network Type</label>
+                            <select name="network-type" id="network-type">
+                                <option value="LTE_20" selected="true">4G LTE</option>
+                                <option value="NR_100">5G</option>
+                            </select>
+                            <label for="starting-ip">Starting IP Address</label>
+                            <input type="text" name="starting-ip" id="starting-ip" value="10.0.0.1">
+                        </fieldset>
+                        <button type="submit">Configure</button>
+                    </form>
+                </div>
+                <div>
+                    <h2>Components</h2>
+                    <div id="component-control">
+                        <button onclick="event.preventDefault(); addBaseStation();">
+                            Add Base Station
+                        </button>
+                        <button onclick="event.preventDefault(); addEndUser();">
+                            Add End User
+                        </button>
+                    </div>
+                    <div id="components">
+                        <div id="icon-tray">
+                            <!-- {% for icon in ['fa-tower-cell', 'fa-mobile']%}
+                            <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
+                            {% endfor %} -->
+                        </div>
+                        <p>Drag created Base Stations/End Users onto the simulation with mouse click.</p>
+                    </div>
+                </div>       
 
-        <div>
-            <h2>Details</h2>
-            <div id="details">
-                {% if device_selected %}
-                <ul>
-                    <li>IP Address: {{device_selected.ip}}</li>
-                </ul>
-                {% else %}
-                <p>Select a device to see details</p>
-                {% endif %}
+                <div>
+                    <h2>Details</h2>
+                    <div id="details">
+                        <div id="details-device"></div>
+                        <p id="details-default">Select a device to see details</p>
+                        <!-- {% if device_selected %}
+                        {% else %}
+                        {% endif %} -->
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
         <div>
             <h2>Logs</h2>
