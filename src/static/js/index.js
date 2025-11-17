@@ -21,6 +21,8 @@ function addBaseStation(){
     newBaseStation.addEventListener('mousedown', startDrag);
     newBaseStation.addEventListener('click', selectDevice);
     document.getElementById('icon-tray').appendChild(newBaseStation);
+
+    //API CALL NEEDED: create base stations
     return newBaseStation;
 }
 function addEndUser(){
@@ -29,6 +31,8 @@ function addEndUser(){
     newEndUser.addEventListener('mousedown', startDrag);
     newEndUser.addEventListener('click', selectDevice);
     document.getElementById('icon-tray').appendChild(newEndUser);
+
+    //API CALL NEEDED: create end users
     return newEndUser;
 }
 
