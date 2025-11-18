@@ -36,8 +36,8 @@ p{
 
 .font-awesome-icon {
     cursor: pointer;
-    width: auto !important;
-    margin: 2px;
+    width: 18px !important;
+    padding: 2px;
 }
 .font-awesome-icon.selected{
     color: green;

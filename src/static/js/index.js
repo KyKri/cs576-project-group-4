@@ -118,6 +118,8 @@ function resizeCanvas(height, width) {
     canvas.height = height;
     canvas.style.width = width + "px";
     canvas.style.height = height + "px";
+
+    updateCanvas();
 }
 
 // Let backend know about simulation configuration

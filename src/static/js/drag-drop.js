@@ -25,10 +25,13 @@ function dragMove(event){
         draggedIcon.style.position = 'absolute';
         draggedIcon.style.left = `${x}px`;
         draggedIcon.style.top = `${y}px`;
+
+        updateCanvas();
     }
 }
 
 function releaseDrag(event){
+    if(draggedIcon){ updateCanvas(); }
     draggedIcon = null;
     canvas.removeEventListener('mousemove', dragMove);
 }
