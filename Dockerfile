@@ -37,10 +37,32 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libssl3 ca-certificates iproute2 netcat-openbsd telnet iperf iptables iputils-ping tcpdump vim && \ 
     rm -rf /var/lib/apt/lists/*
+
+# Install Firefox and dependencies for Wayland GUI + audio
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        firefox-esr \
+        mesa-utils \
+        libgl1 \
+        libglvnd0 \
+        libcanberra-gtk3-module \
+        fonts-dejavu-core \
+        dbus \
+        libdbus-glib-1-2 \
+        libasound2 \
+        pulseaudio \
+        && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Environment variables for Firefox on Wayland
+ENV GTK_THEME=Adwaita \
+    MOZ_ENABLE_WAYLAND=1 \
+    MOZ_DISABLE_RDD_SANDBOX=1
 
 # Bring layer3 wheels from the builder stage
 COPY --from=builder /wheels /wheels
