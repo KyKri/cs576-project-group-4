@@ -39,7 +39,7 @@ WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libssl3 ca-certificates iproute2 netcat-openbsd telnet iperf && \ 
+    libssl3 ca-certificates iproute2 netcat-openbsd telnet iperf iptables iputils-ping tcpdump vim && \ 
     rm -rf /var/lib/apt/lists/*
 
 # Bring layer3 wheels from the builder stage
