@@ -31,7 +31,7 @@ class Glu:
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
         self.pause_event = threading.Event()
-        self.paused = False
+        self.paused = True
         self.pixels_per_meter: float = 1.0
         self.tech_profile: phy.TechProfile = phy.LTE_20
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
@@ -157,7 +157,7 @@ class Glu:
         send_t.start()
         return send_t
 
-    def set_tech_profile(self, tech: str = None) -> None:
+    def set_tech_profile(self, tech: str) -> None:
         new_tech_profile = phy.LTE_20  # default
 
         if tech == "LTE_20":
