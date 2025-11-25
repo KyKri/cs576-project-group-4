@@ -7,6 +7,7 @@ use pyo3::{pyclass, pymethods};
 #[pyclass]
 pub struct Cabernet {
     pub ues: Vec<UE>,
+    pub gateway: Option<UE>,
 }
 
 /// APIs
@@ -14,33 +15,54 @@ pub struct Cabernet {
 impl Cabernet {
     #[new]
     pub fn new() -> Self {
-        Cabernet { ues: Vec::new() }
+        Cabernet {
+            ues: Vec::new(),
+            gateway: None,
+        }
+    }
+
+    #[staticmethod]
+    pub fn with_internet(gateway: &str, subnet: &str) -> Result<Self> {
+        let gw_ue = UE::with_gateway(gateway.into(), subnet);
+
+        Ok(Self {
+            ues: Vec::new(),
+            gateway: Some(gw_ue),
+        })
     }
 
     /// Send an IPv4 frame to the appropriate UE based on the destination IP address in the frame.
+    /// If gateway is configured, send to gateway if no matching UE is found.
     pub fn send_frame(&self, frame: Vec<u8>) -> Result<usize> {
         let iph = etherparse::Ipv4HeaderSlice::from_slice(&frame)?;
         let dst_ip = iph.destination_addr().to_string();
 
-        self.get_ue(&dst_ip)?.send(&frame)
+        match self.get_ue(&dst_ip) {
+            Ok(ue) => ue.send(&frame),
+            Err(e) => match &self.gateway {
+                Some(gw) => gw.send(&frame),
+                None => Err(e),
+            },
+        }
     }
 
     /// Poll an IPv4 frame received from any UE.
     /// Returns None if no frame is available.
     pub fn poll_frame(&mut self) -> Option<Vec<u8>> {
-        for ue in &mut self.ues {
+        fn poll(ue: &mut UE) -> Option<Vec<u8>> {
             match ue.recv() {
-                Ok(Some(buf)) => {
-                    return Some(buf);
-                }
-                Ok(None) => continue,
+                Ok(Some(buf)) => Some(buf),
+                Ok(None) => None,
                 Err(e) => {
                     eprintln!("Error receiving from from UE {}: {}", ue.ip, e);
-                    continue;
+                    None
                 }
             }
         }
-        None
+        self.ues
+            .iter_mut()
+            .chain(self.gateway.iter_mut())
+            .find_map(poll)
     }
 
     pub fn poll_frame_from_ue(&mut self, ip: &str) -> Result<Option<Vec<u8>>> {
@@ -84,6 +106,7 @@ impl Cabernet {
     fn get_ue(&self, ip: &str) -> Result<&UE> {
         self.ues
             .iter()
+            .chain(self.gateway.iter())
             .find(|ue| ue.ip == ip)
             .ok_or(CabernetError::IPNotAssigned(ip.into()))
     }

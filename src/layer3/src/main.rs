@@ -1,7 +1,7 @@
 use layer3::Cabernet;
 
 fn main() {
-    let mut c = Cabernet::new();
+    let mut c = Cabernet::with_internet("10.0.0.3", "10.0.0.0.0/24").unwrap();
     c.create_ue("10.0.0.4").unwrap();
     c.create_ue("10.0.0.5").unwrap();
     let mut i = 0;

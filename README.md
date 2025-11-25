@@ -66,7 +66,31 @@ docker build . -f Dockerfile -t cellnetsim:latest
 ```
 1. Run the container, with capabilities for TUN/TAP:
 ```bash
-docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW --cap-add=SYS_ADMIN --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
+docker run --rm -it --privileged --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
+```
+or if you want GUI setup for `Firefox`:
+```bash 
+# Arch + Wayland
+docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun \
+  -e WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0} \
+  -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+  -e MOZ_ENABLE_WAYLAND=1 \
+  -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY \
+  --device /dev/dri \
+  -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
+  -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \
+  -v ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro \
+  --device /dev/snd \
+  --shm-size=1g \
+  cellnetsim:latest bash
+# Debian + GDM
+...
+
+# Mac
+...
+
+# Windows
+...
 ```
 
 You can then interact with this container directly via terminal.

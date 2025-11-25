@@ -48,16 +48,19 @@ async def index(request: Request):
 @app.post("/control/start")
 async def control_start():
     # Logic to start
+    g.toggle_pause()
     return {"message": "Start action received"}
 
 @app.post("/control/pause")
 async def control_pause():
     # Logic to pause
+    g.toggle_pause()
     return {"message": "Pause action received"}
 
 @app.post("/control/stop")
 async def control_stop():
     # Logic to stop
+    g.toggle_pause()
     return {"message": "Stop action received"}
 
 @app.post("/init/simulation")

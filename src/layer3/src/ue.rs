@@ -4,6 +4,7 @@ use nix::sched::{clone, setns, CloneFlags};
 use nix::sys::wait::waitpid;
 use nix::unistd::{getpid, Pid};
 use pyo3::{pyclass, pymethods};
+use std::io::{Read, Write};
 use std::process::Command;
 
 const STACK_SIZE: usize = 1024 * 1024; // 1 MB stack for child
@@ -29,10 +30,32 @@ impl UE {
         let pause_pid = create_pause();
 
         // attach netns to the ip netns list (for better visibility)
-        attach_netns(pause_pid);
+        attach_netns(pause_pid, &ip);
 
         // create and setup tun in that netns
         let iface = create_tun(pause_pid, &ip);
+
+        // setup default route via the given ip
+        setup_default_route(&iface, &ip);
+
+        Self {
+            ip,
+            iface,
+            pause_pid,
+        }
+    }
+    pub fn with_gateway(ip: String, subnet: &str) -> Self {
+        // create pause process in new netns
+        let pause_pid = create_pause();
+
+        // attach netns to the ip netns list (for better visibility)
+        attach_netns(pause_pid, &ip);
+
+        // create and setup tun in that netns
+        let iface = create_tun(pause_pid, &ip);
+
+        // setup internet access via the given gateway
+        setup_internet_access(&ip, subnet);
 
         Self {
             ip,
@@ -80,10 +103,10 @@ impl UE {
 }
 
 /// Attach the network namespace of the pause process to the ip netns list
-fn attach_netns(pause_pid: Pid) {
+fn attach_netns(pause_pid: Pid, ip: &str) {
     // ip netns attach childns {pause_pid}
     let output = Command::new("ip")
-        .args(format!("netns attach ana-{pause_pid} {pause_pid}").split(' '))
+        .args(format!("netns attach {} {pause_pid}", netns_for_ip(ip)).split(' '))
         .output()
         .expect("failed to execute process");
     if !output.status.success() {
@@ -95,10 +118,10 @@ fn attach_netns(pause_pid: Pid) {
 }
 
 /// Detach the network namespace of the pause process from the ip netns list
-fn detach_netns(pause_pid: Pid) {
+fn detach_netns(ip: &str) {
     // ip netns delete childns
     let output = Command::new("ip")
-        .args(format!("netns delete ana-{pause_pid}").split(' '))
+        .args(format!("netns delete {}", netns_for_ip(ip)).split(' '))
         .output()
         .expect("failed to execute process");
     if !output.status.success() {
@@ -151,11 +174,13 @@ fn create_tun(cid: Pid, ip: &str) -> tun_tap::Iface {
     .unwrap();
 
     setns(new_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
+
     // create tun
     let tun =
-        tun_tap::Iface::without_packet_info(&format!("ana-{cid}"), tun_tap::Mode::Tun).unwrap();
+        tun_tap::Iface::without_packet_info(&format!("cab-{cid}"), tun_tap::Mode::Tun).unwrap();
     tun.set_non_blocking().unwrap();
     setup_tun(&tun, ip);
+
     // go back to original ns
     setns(org_ns_fd, nix::sched::CloneFlags::CLONE_NEWNET).unwrap();
 
@@ -193,7 +218,14 @@ fn bring_interface_up(tun: &tun_tap::Iface) {
 /// Setup the default route via the TUN interface
 fn setup_default_route(tun: &tun_tap::Iface, ip: &str) {
     let output = Command::new("ip")
-        .args(format!("r add default via {ip} dev {}", &tun.name()).split(' '))
+        .args(
+            format!(
+                "-n {} r add default via {ip} dev {}",
+                netns_for_ip(ip),
+                &tun.name()
+            )
+            .split(' '),
+        )
         .output()
         .expect("failed to execute process");
 
@@ -209,14 +241,47 @@ fn setup_default_route(tun: &tun_tap::Iface, ip: &str) {
 fn setup_tun(tun: &tun_tap::Iface, ip: &str) {
     assign_ip_to_tun(tun, ip);
     bring_interface_up(tun);
-    setup_default_route(tun, ip);
+}
+
+/// Setup internet access on the UE for the given subnet
+fn setup_internet_access(ip: &str, subnet: &str) {
+    const SCRIPT: &str = include_str!("../scripts/setup_internet.sh");
+
+    let mut child = Command::new("bash")
+        .args(["-s", "--", &netns_for_ip(ip), subnet])
+        .stdin(std::process::Stdio::piped())
+        .spawn()
+        .expect("failed to spawn bash for internet setup");
+
+    {
+        let stdin = child.stdin.as_mut().expect("failed to open stdin");
+        stdin
+            .write_all(SCRIPT.as_bytes())
+            .expect("failed to write internet setup script to stdin");
+    }
+
+    let status = child.wait().expect("failed to wait on child");
+
+    if !status.success() {
+        let mut buf = String::new();
+        let _nbytes = &child
+            .stderr
+            .expect("failed to get stderr")
+            .read_to_string(&mut buf)
+            .unwrap();
+        eprintln!("Error setting up internet access: {buf}",);
+    }
+}
+
+fn netns_for_ip(ip: &str) -> String {
+    format!("cab-{}", ip)
 }
 
 impl Drop for UE {
     fn drop(&mut self) {
         eprintln!("Dropping UE with IP {}", self.ip);
         // remove netns from ip netns list
-        detach_netns(self.pause_pid);
+        detach_netns(&self.ip);
         // kill pause process
         let _ = nix::sys::signal::kill(self.pause_pid, nix::sys::signal::Signal::SIGKILL);
         // wait for pause process to exit

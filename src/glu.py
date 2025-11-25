@@ -1,4 +1,3 @@
-from pydantic import BaseModel
 import layer1PHY as phy
 import layer3 as net
 import heapq
@@ -7,7 +6,7 @@ import threading
 import ipaddress
 
 
-class UE():
+class UE:
     def __init__(self, id: int, l1ue: phy.UE, l3ue: net.UE, ip: str):
         self.l1ue = l1ue
         self.l3ue = l3ue
@@ -16,7 +15,7 @@ class UE():
         self.connected_to: BaseStation | None = None
 
 
-class BaseStation():
+class BaseStation:
     def __init__(self, id: int, l1tower: phy.Tower):
         self.tower = l1tower
         self.id = id
@@ -31,6 +30,8 @@ class Glu:
         self.tower_id_counter: int = 0
         self.cabernet: net.Cabernet = net.Cabernet()
         self.event = threading.Event()
+        self.pause_event = threading.Event()
+        self.paused = True
         self.pixels_per_meter: float = 1.0
         self.tech_profile: phy.TechProfile = phy.LTE_20
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
@@ -54,9 +55,7 @@ class Glu:
                 ue.ip = new_ip
                 break
 
-    def add_tower(
-        self, x: float, y: float, on: bool = True
-    ) -> BaseStation:
+    def add_tower(self, x: float, y: float, on: bool = True) -> BaseStation:
         l1tower = phy.Tower(x, y, on, self.tech_profile)
         bs = BaseStation(self.tower_id_counter, l1tower)
         self.base_stations.append(bs)
@@ -121,8 +120,16 @@ class Glu:
                 return ue
         return None
 
+    def toggle_pause(self) -> None:
+        self.paused = not self.paused
+        if not self.paused:
+            self.pause_event.set()
+
     def __run_poll(self):
         while True:
+            if self.paused:
+                self.pause_event.wait()
+                continue
             for ue in self.ues:
                 polled = self.poll_ue(ue.ip)
                 if polled:
@@ -130,6 +137,9 @@ class Glu:
 
     def __run_send(self):
         while True:
+            if self.paused:
+                self.pause_event.wait()
+                continue
             sent, wait = self.try_send_frame()
             if not sent:
                 if wait == 0:
@@ -147,14 +157,14 @@ class Glu:
         send_t.start()
         return send_t
 
-    def set_tech_profile(self, tech: str = None) -> None:
-        new_tech_profile = phy.LTE_20 # default
+    def set_tech_profile(self, tech: str) -> None:
+        new_tech_profile = phy.LTE_20  # default
 
         if tech == "LTE_20":
             new_tech_profile = phy.LTE_20
         elif tech == "NR_100":
             new_tech_profile = phy.NR_100
-        
+
         self.tech_profile = new_tech_profile
 
     def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
@@ -171,7 +181,7 @@ class Glu:
         self.last_assigned_ip = next_ip
 
         return next_ip
-    
+
     def set_pixels_per_meter(self, ppm: float) -> None:
         self.pixels_per_meter = ppm
 
