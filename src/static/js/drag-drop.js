@@ -69,4 +69,6 @@ function removeDevice(event){
     document.getElementById('details-default').style.display = 'initial';
 
     //API CALL NEEDED: removing a selected device
+
+    updateCanvas();
 }
