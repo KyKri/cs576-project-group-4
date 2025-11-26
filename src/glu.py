@@ -37,6 +37,9 @@ class Glu:
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
         self.last_assigned_ip: ipaddress.IPv4Address = None
 
+    def towers(self) -> list[phy.Tower]:
+        return [bs.tower for bs in self.base_stations]
+
     def add_ue(self, x: float, y: float) -> UE:
         ip = str(self.generate_next_ip())
         l3ue = self.cabernet.create_ue(ip)
@@ -199,13 +202,18 @@ def now_in_ms() -> int:
 
 def demo():
     g = Glu()
-    g.add_tower(phy.NR_100, 200.0, 300.0)
-    g.add_tower(phy.NR_100, 600.0, 300.0)
-    g.add_tower(phy.LTE_20, 400.0, 150.0)
+    g.add_tower(200.0, 300.0)
+    g.add_tower(600.0, 300.0)
+    g.add_tower(400.0, 150.0)
     g.add_ue(150.0, 250.0)
     g.add_ue(500.0, 350.0)
     g.add_ue(650.0, 140.0)
     g.syncronize_map()
+    g.base_stations[0].tower.on = True
+    g.base_stations[1].tower.on = True
+    g.base_stations[2].tower.on = True
+    print(g.base_stations[0].tower.per_dl_qpsk(g.ues[0].l1ue, g.towers(), 1024))
+    print(g.base_stations[0].tower.per_dl_qpsk(g.ues[0].l1ue, g.towers(), 1024))
     # multithreaded polling and sending would go here
     poll_t = g.run_poll()
     send_t = g.run_send()
