@@ -1,5 +1,5 @@
-from src.layer1.core import TechProfile
-from src.layer1 import core
+from .core import TechProfile
+from . import core
 from typing import List
 
 LTE_20 = TechProfile("LTE-20MHz", carrier_hz=2.6e9, bandwidth_hz=20e6, eta_eff=0.50)
@@ -22,17 +22,21 @@ class Tower:
         self.on = on
 
     def upload_latency(self, ue: UE, nbytes: int, active_ues: List[UE]) -> float:
-        distances = [ue_tower_dist(ue, self) for ue in active_ues]
+        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
         return self.t.up_latency(ue_tower_dist(ue, self), nbytes, distances)
 
     def download_latency(
         self, ue: UE, nbytes: int, active_towers: List["Tower"]
     ) -> float:
-        distances = [ue_tower_dist(ue, tower) for tower in active_towers if self != tower]
+        distances = [
+            ue_tower_dist(ue, tower) for tower in active_towers if self != tower
+        ]
         return self.t.down_latency(ue_tower_dist(ue, self), nbytes, distances)
 
     def download_bandwidth_mbps(self, ue: UE, active_towers: List["Tower"]) -> float:
-        distances = [ue_tower_dist(ue, tower) for tower in active_towers if self != tower]
+        distances = [
+            ue_tower_dist(ue, tower) for tower in active_towers if self != tower
+        ]
         return (
             self.t.rate_bps(self.t.sinr_dl(ue_tower_dist(ue, self), distances)) / 1e6
         )  # convert to Mbps
@@ -40,13 +44,15 @@ class Tower:
     def download_packet_error_rate(
         self, ue: UE, nbytes: int, active_towers: List["Tower"]
     ) -> float:
-        distances = [ue_tower_dist(ue, tower) for tower in active_towers if self != tower]
+        distances = [
+            ue_tower_dist(ue, tower) for tower in active_towers if self != tower
+        ]
         return self.t.per_dl_qpsk(ue_tower_dist(ue, self), nbytes, distances)
 
     def upload_packet_error_rate(
         self, ue: UE, nbytes: int, active_ues: List[UE]
     ) -> float:
-        distances = [ue_tower_dist(ue, self) for ue in active_ues]
+        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
         return self.t.per_ul_qpsk(ue_tower_dist(ue, self), nbytes, distances)
 
 
@@ -58,17 +64,28 @@ def ue_tower_dist(ue: UE, tower: Tower) -> float:
 def demo():
     t1 = Tower(600, 300, True, LTE_20)
     t2 = Tower(400, 150, True, LTE_20)
-    ue1 = UE(500, 350)
+    ue1 = UE(610, 320)
     ue2 = UE(450, 250)
     towers = [t1, t2]
+    ues = [ue1, ue2]
     print(f"dist t1-ue1: {ue_tower_dist(ue1, t1)} m")
     print(f"dist t1-ue2: {ue_tower_dist(ue2, t1)} m")
     print(f"dist t2-ue1: {ue_tower_dist(ue1, t2)} m")
     print(f"dist t2-ue2: {ue_tower_dist(ue2, t2)} m")
+    print("---- Distances ----")
     print(t1.download_packet_error_rate(ue1, 1024, towers))
     print(t1.download_packet_error_rate(ue2, 1024, towers))
     print(t2.download_packet_error_rate(ue1, 1024, towers))
     print(t2.download_packet_error_rate(ue2, 1024, towers))
+    print("---- Download Packet Error Rates ----")
+
+    # now uploads
+    print(t1.upload_packet_error_rate(ue1, 1024, ues))
+    print(t1.upload_packet_error_rate(ue2, 1024, ues))
+    print(t2.upload_packet_error_rate(ue1, 1024, ues))
+    print(t2.upload_packet_error_rate(ue2, 1024, ues))
+    print("---- Upload Packet Error Rates ----")
+
 
 
 if __name__ == "__main__":

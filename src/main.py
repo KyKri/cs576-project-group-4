@@ -3,18 +3,21 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, confloat
+from pathlib import Path
 from typing import Literal
 import uvicorn
-from glu import Glu
-import glu
-from pathlib import Path
+from src.glu import Glu
+from src import glu
 
 app = FastAPI()
 g = Glu()
 
-app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+app.mount(
+    "/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static"
+)
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
 
 class SimulationConfig(BaseModel):
     height: confloat(gt=0)
@@ -23,27 +26,33 @@ class SimulationConfig(BaseModel):
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
 
+
 class BaseStationInit(BaseModel):
     x: float
     y: float
+
 
 class BaseStationUpdate(BaseModel):
     x: float
     y: float
     on: bool
 
+
 class UserEquipmentInit(BaseModel):
     x: float
     y: float
+
 
 class UserEquipmentUpdate(BaseModel):
     x: float
     y: float
     change_ip: bool
 
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
+
 
 @app.post("/control/start")
 async def control_start():
@@ -51,17 +60,20 @@ async def control_start():
     g.toggle_pause()
     return {"message": "Start action received"}
 
+
 @app.post("/control/pause")
 async def control_pause():
     # Logic to pause
     g.toggle_pause()
     return {"message": "Pause action received"}
 
+
 @app.post("/control/stop")
 async def control_stop():
     # Logic to stop
     g.toggle_pause()
     return {"message": "Stop action received"}
+
 
 @app.post("/init/simulation")
 async def init_simulation(payload: SimulationConfig):
@@ -80,12 +92,15 @@ async def init_simulation(payload: SimulationConfig):
         "message": "Simulation Initialized",
     }
 
+
 # Sample call:
 """
 curl -X POST http://localhost:8000/init/basestation \
 -H "Content-Type: application/json" \
 -d '{"x": 100, "y": 100}'
 """
+
+
 @app.post("/init/basestation")
 async def init_basestation(payload: BaseStationInit):
     x = payload.x
@@ -102,12 +117,15 @@ async def init_basestation(payload: BaseStationInit):
         },
     }
 
+
 # Sample call:
 """
 curl -X POST http://localhost:8000/init/userequipment \
 -H "Content-Type: application/json" \
 -d '{"x": 150, "y": 150}'
 """
+
+
 @app.post("/init/userequipment")
 async def init_userequipment(payload: UserEquipmentInit):
     x = payload.x
@@ -126,8 +144,9 @@ async def init_userequipment(payload: UserEquipmentInit):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
-        }
+        },
     }
+
 
 # Sample call
 """
@@ -135,6 +154,8 @@ curl -X POST http://localhost:8000/update/basestation/0 \
 -H "Content-Type: application/json" \
 -d '{"x": 110, "y": 110, "on": false}'
 """
+
+
 @app.post("/update/basestation/{bs_id}")
 async def update_basestation(bs_id: int, payload: BaseStationUpdate):
     x = payload.x
@@ -161,9 +182,10 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
             "id": updated_bs.id,
             "x": updated_bs.tower.x,
             "y": updated_bs.tower.y,
-            "on": updated_bs.tower.on
-        }
+            "on": updated_bs.tower.on,
+        },
     }
+
 
 # Sample call:
 """
@@ -171,6 +193,8 @@ curl -X POST http://localhost:8000/update/userequipment/0 \
 -H "Content-Type: application/json" \
 -d '{"x": 250, "y": 250, "change_ip": false}'
 """
+
+
 @app.post("/update/userequipment/{ue_id}")
 async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
     x = payload.x
@@ -204,8 +228,9 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
             "y": updated_ue.l1ue.y,
             "ip": updated_ue.ip,
             "bs": bs,
-        }
+        },
     }
+
 
 @app.websocket("/activity")
 async def activity_endpoint(websocket: WebSocket):
@@ -213,6 +238,7 @@ async def activity_endpoint(websocket: WebSocket):
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(f"Message text was: {data}")
+
 
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
@@ -222,6 +248,7 @@ async def transfer_endpoint(websocket: WebSocket):
             _, data = frame
             (src, dst) = glu.extract_ips_from_frame(data)
             await websocket.send_text(f"{src} -> {dst}: {len(data)} bytes")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000)
