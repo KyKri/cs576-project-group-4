@@ -51,8 +51,9 @@ function updateCanvas(){
 
     //draw ranges for all base stations
     baseStationsOnCanvas.each(function(index, element){
-        const { x, y } = getElementCoordinates(element);
+        if(element.classList.contains('off')){return true;} //skip base station if it has been toggled off
 
+        const { x, y } = getElementCoordinates(element);
         //API CALL NEEDED: get actual range of each base station
         drawCircle(x, y, 80);
     });

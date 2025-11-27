@@ -110,15 +110,8 @@ function selectDevice(event){
             getBaseStation(id).then(result => {
                 //console.log(result);
                 BSList[result.base_station.id] = result.base_station;
-                document.getElementById('details-device').innerHTML = `
-                <p>Base Station ${id}</p>
-                <ul>
-                    <li>Status: ${result.base_station.on}</li>
-                    <li>Link Quality: </li>
-                </ul>
-                <button onclick="event.preventDefault(); removeDevice();">
-                    Delete
-                </button>`;
+                writeBaseStationDetails(result.base_station);
+                return result;
             });
         } catch (err) { console.log(err); }
     }
@@ -127,21 +120,16 @@ function selectDevice(event){
             getUserEquipment(id).then(result => {
                 //console.log(result);
                 UEList[result.user_equipment.id] = result.user_equipment;
-                document.getElementById('details-device').innerHTML = `
-                <p>User Equipment ${id}</p>
-                <ul>
-                    <li>IP Address: ${result.user_equipment.ip}</li>
-                    <li>Connected Base Station ID: ${result.user_equipment.bs}</li>
-                </ul>
-                <button onclick="event.preventDefault(); removeDevice();">
-                    Delete
-                </button>`;
+                writeUserEquipmentDetails(result.user_equipment);
+                return result;
             });
         } catch (err) { console.log(err); }
     }
+
+    return lastSelectedIcon;
 }
 
-function removeDevice(event){
+function removeDevice(id){
     lastSelectedIcon.remove();
     document.getElementById('details-device').innerHTML = "";
     document.getElementById('details-default').style.display = 'initial';
@@ -149,4 +137,48 @@ function removeDevice(event){
     //API CALL NEEDED: removing a selected device
 
     updateCanvas();
+    return;
+}
+
+function toggleBaseStation(id){
+    const element = document.getElementById("BaseStation_" + id);
+    const x = BSList[id].x;
+    const y = BSList[id].y;
+    const onStatus = !(BSList[id].on);
+    
+    if(onStatus == false){element.classList.add('off');}
+    else{element.classList.remove('off');}
+
+    updateBaseStation(id, {x: x, y: y, on: onStatus}).then(result => {
+        console.log(result);
+        BSList[result.base_station.id] = result.base_station;
+        writeBaseStationDetails(result.base_station);
+    }).then(result => {updateCanvas();});
+}
+
+function writeBaseStationDetails(bs){
+    document.getElementById('details-device').innerHTML = `
+    <p>Base Station ${bs.id}</p>
+    <ul>
+        <li>Status: ${bs.on}</li>
+        <li>Link Quality: </li>
+    </ul>
+    <button onclick="event.preventDefault(); toggleBaseStation(${bs.id});">Toggle On/Off</button>
+    <button onclick="event.preventDefault(); removeDevice();">
+        Delete
+    </button>`;
+    return;
+}
+
+function writeUserEquipmentDetails(ue){
+    document.getElementById('details-device').innerHTML = `
+    <p>User Equipment ${ue.id}</p>
+    <ul>
+        <li>IP Address: ${ue.ip}</li>
+        <li>Connected Base Station ID: ${ue.bs}</li>
+    </ul>
+    <button onclick="event.preventDefault(); removeDevice();">
+        Delete
+    </button>`;
+    return;
 }
