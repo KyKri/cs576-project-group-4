@@ -16,6 +16,14 @@ function getElementDetails(element){
     return { xElement, yElement, widthOffset, heightOffset };
 }
 
+function getElementCoordinates(element){
+    const { canvas, xOffset, yOffset } = getCanvasDetails();
+    const { xElement, yElement, widthOffset, heightOffset } = getElementDetails(element);
+    const x = xElement - xOffset + widthOffset;
+    const y = yElement - yOffset + heightOffset;
+    return {x, y};
+}
+
 function drawCircle(x, y, r){
     const canvas = document.getElementById('simulation');
     const ctx = canvas.getContext("2d");
@@ -36,39 +44,53 @@ function updateCanvas(){
     baseStationsOnCanvas = $('.font-awesome-icon.fa-tower-cell').filter(function(){
         return $(this).css('position') === 'absolute';
     });
-    //select only end users
-    endUsersOnCanvas = $('.font-awesome-icon.fa-mobile').filter(function(){
+    //select only active end users
+    endUsersOnCanvas = $('.font-awesome-icon.fa-mobile.active').filter(function(){
         return $(this).css('position') === 'absolute';
     });
 
     //draw ranges for all base stations
     baseStationsOnCanvas.each(function(index, element){
-        const { xElement, yElement, widthOffset, heightOffset } = getElementDetails(element);
+        const { x, y } = getElementCoordinates(element);
 
         //API CALL NEEDED: get actual range of each base station
-        drawCircle((xElement - xOffset + widthOffset), (yElement - yOffset + heightOffset), 80);
+        drawCircle(x, y, 80);
     });
 
-    //draw lines connectiong end users connecting to every base station within range
-    endUsersOnCanvas.each(function(i, element1){
-        const user = getElementDetails(element1);
-        const xUser = user.xElement - xOffset + user.widthOffset;
-        const yUser = user.yElement - yOffset + user.heightOffset;
-        baseStationsOnCanvas.each(function(j, element2){
-            const station = getElementDetails(element2);
-            const xStation = station.xElement - xOffset + station.widthOffset;
-            const yStation = station.yElement - yOffset + station.heightOffset;
+    //draw lines connectiong end users connecting to every associated base station
+    endUsersOnCanvas.each(function(i, element){
+        const user = getElementCoordinates(element);
+        const userId = extractIDNumber(element.id).id;
+        const stationId = UEList[userId].bs;
+        if(stationId < 0){return true;}
+        const station = getElementCoordinates(document.getElementById("BaseStation_" + stationId));
+        //console.log("UserEquipment_" + userId, "BaseStation_" + stationId);
 
-            const distance = Math.hypot(xUser - xStation, yUser - yStation);
-            //once again, need API call to get actual range of each base station
-            if (distance <= 80){
-                ctx.strokeStyle = "red";
-                ctx.beginPath();
-                ctx.moveTo(xUser, yUser);
-                ctx.lineTo(xStation, yStation);
-                ctx.stroke();
-            }
-        })
+        //if distance needs to be checked
+        const distance = Math.hypot(user.x - station.x, user.y - station.y);
+
+        ctx.strokeStyle = "red";
+        ctx.beginPath();
+        ctx.moveTo(user.x, user.y);
+        ctx.lineTo(station.x, station.y);
+        ctx.stroke();
+
+        //baseStationsOnCanvas.each(function(j, element2){})
     });
 }
 
+//load base stations and user equipment on canvas if they already exist (upon window refresh)
+/*
+window.onload = function(){
+    BSList.forEach(function(bs, index){
+        console.log(bs);
+        let bsElement = addBaseStation();
+        const { canvas, xOffset, yOffset } = getCanvasDetails();
+        const { xElement, yElement, widthOffset, heightOffset } = getElementDetails(bsElement);
+        bsElement.style.left = `${bs.x + xOffset - widthOffset}px`;
+        bsElement.style.top = `${bs.y + yOffset - heightOffset}px`;
+        bsElement.classList.add('active');
+        bsElement.id = "BaseStation_" + bs.id;
+    });
+}
+*/

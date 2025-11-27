@@ -1,4 +1,6 @@
 var ws = new WebSocket("ws://localhost:8000/activity");
+var UEList = [];
+var BSList = [];
 
 ws.onmessage = function(event) {
     var messages = document.getElementById('messages');
@@ -22,18 +24,23 @@ function addBaseStation(){
     newBaseStation.addEventListener('click', selectDevice);
     document.getElementById('icon-tray').appendChild(newBaseStation);
 
-    //API CALL NEEDED: create base stations
     return newBaseStation;
 }
-function addEndUser(){
-    const newEndUser = document.createElement('span');
-    newEndUser.classList.add('font-awesome-icon','fas','fa-solid','fa-mobile');
-    newEndUser.addEventListener('mousedown', startDrag);
-    newEndUser.addEventListener('click', selectDevice);
-    document.getElementById('icon-tray').appendChild(newEndUser);
+function addUserEquipment(){
+    const newUserEquipment = document.createElement('span');
+    newUserEquipment.classList.add('font-awesome-icon','fas','fa-solid','fa-mobile');
+    newUserEquipment.addEventListener('mousedown', startDrag);
+    newUserEquipment.addEventListener('click', selectDevice);
+    document.getElementById('icon-tray').appendChild(newUserEquipment);
 
-    //API CALL NEEDED: create end users
-    return newEndUser;
+    return newUserEquipment;
+}
+
+function extractIDNumber(deviceId){
+    const splitId = deviceId.split("_", 2);
+    const deviceType = splitId[0];
+    const id = parseInt(splitId[1]);
+    return { deviceType, id };
 }
 
 // Hanlde simulation controls

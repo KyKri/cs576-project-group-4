@@ -91,6 +91,7 @@ async def init_basestation(payload: BaseStationInit):
     x = payload.x
     y = payload.y
     bs = g.add_tower(x=x, y=y, on=True)
+    g.syncronize_map()
 
     return {
         "message": f"BaseStation {bs.id} created successfully",
@@ -114,12 +115,43 @@ async def init_userequipment(payload: UserEquipmentInit):
     y = payload.y
 
     ue = g.add_ue(x=x, y=y)
+    g.syncronize_map()
     bs = -1
     if ue.connected_to is not None:
         bs = ue.connected_to.id
 
     return {
         "message": f"UserEquipment {ue.id} created successfully",
+        "user_equipment": {
+            "id": ue.id,
+            "x": ue.l1ue.x,
+            "y": ue.l1ue.y,
+            "ip": ue.ip,
+            "bs": bs,
+        }
+    }
+
+@app.post("/get/basestation/{bs_id}")
+async def get_basestation(bs_id: int):
+    bs = g.get_tower(bs_id)
+    return {
+        "base_station": {
+            "id": bs.id,
+            "x": bs.tower.x,
+            "y": bs.tower.y,
+            "on": bs.tower.on
+        }
+    }
+
+@app.post("/get/userequipment/{ue_id}")
+async def get_userequipment(ue_id: int):
+    ue = g.get_ue(ue_id)
+
+    bs = -1
+    if ue.connected_to is not None:
+        bs = ue.connected_to.id
+
+    return {
         "user_equipment": {
             "id": ue.id,
             "x": ue.l1ue.x,

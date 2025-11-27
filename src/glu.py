@@ -47,6 +47,12 @@ class Glu:
         self.syncronize_map()
         return ue
 
+    def get_ue(self, ue_id: int) -> UE:
+        for ue in self.ues:
+            if ue.id == ue_id:
+                return ue
+        return None
+
     def update_ue_ip(self, ue_id: int):
         new_ip = str(self.generate_next_ip())
         for ue in self.ues:
@@ -62,6 +68,12 @@ class Glu:
         self.tower_id_counter += 1
         self.syncronize_map()
         return bs
+
+    def get_tower(self, bs_id: int) -> BaseStation:
+        for bs in self.base_stations:
+            if bs.id == bs_id:
+                return bs
+        return None
 
     # update the UE to tower associations based on current positions and tower states
     def syncronize_map(self):

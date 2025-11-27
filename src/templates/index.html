@@ -10,8 +10,25 @@
         <h1>CellNetSim</h1>
         <section id="interface-main">
             <div class="left-column">
-                <div>
+                <div style="position:relative;">
                     <canvas id="simulation" width="500" height="500"></canvas>
+                    <h2 style="margin-top:5px;">Components</h2>
+                    <div id="component-control">
+                        <button onclick="event.preventDefault(); addBaseStation();">
+                            Add Base Station
+                        </button>
+                        <button onclick="event.preventDefault(); addUserEquipment();">
+                            Add End User
+                        </button>
+                    </div>
+                    <div id="components">
+                        <div id="icon-tray">
+                            <!-- {% for icon in ['fa-tower-cell', 'fa-mobile']%}
+                            <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
+                            {% endfor %} -->
+                        </div>
+                        <p>Drag created Base Stations/End Users onto the simulation with mouse click.</p>
+                    </div>
                 </div>
             </div>
             <div class="right-column">
@@ -53,35 +70,13 @@
                         </fieldset>
                         <button type="submit">Configure</button>
                     </form>
-                </div>
-                <div>
-                    <h2>Components</h2>
-                    <div id="component-control">
-                        <button onclick="event.preventDefault(); addBaseStation();">
-                            Add Base Station
-                        </button>
-                        <button onclick="event.preventDefault(); addEndUser();">
-                            Add End User
-                        </button>
-                    </div>
-                    <div id="components">
-                        <div id="icon-tray">
-                            <!-- {% for icon in ['fa-tower-cell', 'fa-mobile']%}
-                            <span class="font-awesome-icon fas fa-solid {{icon}}"></span>
-                            {% endfor %} -->
-                        </div>
-                        <p>Drag created Base Stations/End Users onto the simulation with mouse click.</p>
-                    </div>
-                </div>       
+                </div>      
 
                 <div>
                     <h2>Details</h2>
                     <div id="details">
                         <div id="details-device"></div>
                         <p id="details-default">Select a device to see details</p>
-                        <!-- {% if device_selected %}
-                        {% else %}
-                        {% endif %} -->
                     </div>
                 </div>
             </div>
@@ -108,6 +103,7 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://kit.fontawesome.com/c663cc9ee5.js" crossorigin="anonymous"></script>
         <script src="{{ url_for('static', path='/js/index.js') }}"></script>
+        <script src="{{ url_for('static', path='/js/api.js') }}"></script>
         <script src="{{ url_for('static', path='/js/canvas.js') }}"></script>
         <script src="{{ url_for('static', path='/js/drag-drop.js') }}"></script>
     </body>
