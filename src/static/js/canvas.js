@@ -41,8 +41,8 @@ function drawCircle(x, y, r){
     gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)'); 
     gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
     ctx.fillStyle = gradient;
-    ctx.fillRect(x-r, y-r, x+r, y+r);
-    
+    ctx.fillRect(x-r, y-r, 2*r, 2*r);
+
     return [x, y];
 }
 
@@ -65,7 +65,6 @@ function updateCanvas(){
         if(element.classList.contains('off')){return true;} //skip base station if it has been toggled off
 
         const { x, y } = getElementCoordinates(element);
-        //API CALL NEEDED: get actual range of each base station
         drawCircle(x, y, 80);
     });
 

@@ -55,3 +55,12 @@ async function updateUserEquipment(id, { x, y, change_ip }) {
   });
   return res.json();
 }
+
+async function updateEveryUserEquipment() {
+    for (const ue of UEList){
+        await getUserEquipment(ue.id).then(result => {
+            UEList[result.user_equipment.id] = result.user_equipment;
+        });
+    }
+    return UEList;
+}

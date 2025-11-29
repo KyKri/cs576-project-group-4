@@ -43,8 +43,10 @@ function releaseDrag(event){
                     console.log(result);
                     BSList[result.base_station.id] = result.base_station;
                 }).then(result => {
-                    updateCanvas();
-                    updateDeviceDetails();
+                    updateEveryUserEquipment().then(result => {
+                        updateCanvas();
+                        updateDeviceDetails();
+                    });
                 });
             }
             else if(deviceType == "UserEquipment"){
@@ -73,7 +75,10 @@ function releaseDrag(event){
                         //once successfully created, set BS to active
                         lastIcon.classList.add('active'); 
                     }).then(result => {
-                        updateCanvas();
+                        updateEveryUserEquipment().then(result => {
+                            updateCanvas();
+                            updateDeviceDetails();
+                        });
                     });
                 } catch (err) { console.log(err); }
             }
@@ -99,10 +104,10 @@ function releaseDrag(event){
 }
 
 function selectDevice(event){
-    lastSelectedIcon = this;
     //ignore rest of code if the selected icon isn't active yet
-    if(!lastSelectedIcon.classList.contains('active')){return;}
+    if(!this.classList.contains('active')){return;}
 
+    lastSelectedIcon = this;
     //toggle selected class
     $('.font-awesome-icon').removeClass('selected');
     lastSelectedIcon.classList.add('selected');
@@ -111,7 +116,6 @@ function selectDevice(event){
     document.getElementById('details-default').style.display = 'none';
     
     updateDeviceDetails();
-
     return lastSelectedIcon;
 }
 
@@ -139,11 +143,13 @@ function toggleBaseStation(id){
         console.log(result);
         BSList[result.base_station.id] = result.base_station;
         writeBaseStationDetails(result.base_station);
-    }).then(result => {updateCanvas();});
+        updateEveryUserEquipment().then(result => {updateCanvas();});
+    });
     return onStatus;
 }
 
 function updateDeviceDetails(){
+    if(lastSelectedIcon == null){return;}
     const deviceId = lastSelectedIcon.id;
     const { deviceType, id } = extractIDNumber(deviceId);
 
@@ -177,9 +183,9 @@ function writeBaseStationDetails(bs){
         <li>Link Quality: </li>
     </ul>
     <button onclick="event.preventDefault(); toggleBaseStation(${bs.id});">Toggle On/Off</button>
-    <button onclick="event.preventDefault(); removeDevice();">
+    <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
-    </button>`;
+    </button> -->`;
     return bs.id;
 }
 
@@ -190,8 +196,8 @@ function writeUserEquipmentDetails(ue){
         <li>IP Address: ${ue.ip}</li>
         <li>Connected Base Station ID: ${ue.bs}</li>
     </ul>
-    <button onclick="event.preventDefault(); removeDevice();">
+    <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
-    </button>`;
+    </button> -->`;
     return ue.id;
 }
