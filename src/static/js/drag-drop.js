@@ -42,7 +42,10 @@ function releaseDrag(event){
                 updateBaseStation(id, {x: x, y: y, on: onStatus}).then(result => {
                     console.log(result);
                     BSList[result.base_station.id] = result.base_station;
-                }).then(result => {updateCanvas();});
+                }).then(result => {
+                    updateCanvas();
+                    updateDeviceDetails();
+                });
             }
             else if(deviceType == "UserEquipment"){
                 //change_ip set to False by default for now
@@ -51,6 +54,7 @@ function releaseDrag(event){
                     UEList[result.user_equipment.id] = result.user_equipment;
                 }).then(result => {
                     updateCanvas();
+                    updateDeviceDetails();
                 });
             }
         }
@@ -68,7 +72,9 @@ function releaseDrag(event){
                         BSList[result.base_station.id] = result.base_station;
                         //once successfully created, set BS to active
                         lastIcon.classList.add('active'); 
-                    }).then(result => {updateCanvas();});
+                    }).then(result => {
+                        updateCanvas();
+                    });
                 } catch (err) { console.log(err); }
             }
             else if(draggedIcon.classList.contains('fa-mobile')){
@@ -80,7 +86,9 @@ function releaseDrag(event){
                         UEList[result.user_equipment.id] = result.user_equipment;
                         //once successfully created, set UE to active
                         lastIcon.classList.add('active');
-                    }).then(result => {updateCanvas();});
+                    }).then(result => {
+                        updateCanvas();
+                    });
                 } catch (err) { console.log(err); }
             }
         }
@@ -99,32 +107,10 @@ function selectDevice(event){
     $('.font-awesome-icon').removeClass('selected');
     lastSelectedIcon.classList.add('selected');
 
-    deviceId = lastSelectedIcon.id;
-    const { deviceType, id } = extractIDNumber(deviceId);
-
     //hide default details text
     document.getElementById('details-default').style.display = 'none';
     
-    if(deviceType == "BaseStation"){
-        try {
-            getBaseStation(id).then(result => {
-                //console.log(result);
-                BSList[result.base_station.id] = result.base_station;
-                writeBaseStationDetails(result.base_station);
-                return result;
-            });
-        } catch (err) { console.log(err); }
-    }
-    else if(deviceType == "UserEquipment"){
-        try {
-            getUserEquipment(id).then(result => {
-                //console.log(result);
-                UEList[result.user_equipment.id] = result.user_equipment;
-                writeUserEquipmentDetails(result.user_equipment);
-                return result;
-            });
-        } catch (err) { console.log(err); }
-    }
+    updateDeviceDetails();
 
     return lastSelectedIcon;
 }
@@ -154,6 +140,33 @@ function toggleBaseStation(id){
         BSList[result.base_station.id] = result.base_station;
         writeBaseStationDetails(result.base_station);
     }).then(result => {updateCanvas();});
+    return onStatus;
+}
+
+function updateDeviceDetails(){
+    const deviceId = lastSelectedIcon.id;
+    const { deviceType, id } = extractIDNumber(deviceId);
+
+    if(deviceType == "BaseStation"){
+        try {
+            getBaseStation(id).then(result => {
+                //console.log(result);
+                BSList[result.base_station.id] = result.base_station;
+                writeBaseStationDetails(result.base_station);
+                return result;
+            });
+        } catch (err) { console.log(err); }
+    }
+    else if(deviceType == "UserEquipment"){
+        try {
+            getUserEquipment(id).then(result => {
+                //console.log(result);
+                UEList[result.user_equipment.id] = result.user_equipment;
+                writeUserEquipmentDetails(result.user_equipment);
+                return result;
+            });
+        } catch (err) { console.log(err); }
+    }
 }
 
 function writeBaseStationDetails(bs){
@@ -167,7 +180,7 @@ function writeBaseStationDetails(bs){
     <button onclick="event.preventDefault(); removeDevice();">
         Delete
     </button>`;
-    return;
+    return bs.id;
 }
 
 function writeUserEquipmentDetails(ue){
@@ -180,5 +193,5 @@ function writeUserEquipmentDetails(ue){
     <button onclick="event.preventDefault(); removeDevice();">
         Delete
     </button>`;
-    return;
+    return ue.id;
 }

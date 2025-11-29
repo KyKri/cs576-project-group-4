@@ -28,10 +28,21 @@ function drawCircle(x, y, r){
     const canvas = document.getElementById('simulation');
     const ctx = canvas.getContext("2d");
 
+    //circle
+    /*
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
     ctx.strokeStyle = "white";
     ctx.stroke();
+    */
+
+    //gradient
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
+    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)'); 
+    gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x-r, y-r, x+r, y+r);
+    
     return [x, y];
 }
 

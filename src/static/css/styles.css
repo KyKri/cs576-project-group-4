@@ -40,7 +40,7 @@ p{
     padding: 2px;
 }
 .font-awesome-icon.selected{
-    color: green;
+    color: white;
 }
 
 .font-awesome-icon::before{
