@@ -6,8 +6,7 @@ from pydantic import BaseModel, confloat
 from pathlib import Path
 from typing import Literal
 import uvicorn
-from src.glu import Glu
-from src import glu
+from glu import Glu, extract_ips_from_frame
 
 app = FastAPI()
 g = Glu()
@@ -279,7 +278,7 @@ async def transfer_endpoint(websocket: WebSocket):
     while True:
         for packet in g.upload_queue._queue:
             frame = packet.frame
-            (src, dst) = glu.extract_ips_from_frame(frame)
+            (src, dst) = extract_ips_from_frame(frame)
             await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
 
 
