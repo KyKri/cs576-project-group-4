@@ -1,68 +1,30 @@
+import ipaddress
+import threading
+import time
+from typing import List
+
 import layer1 as phy
 import layer3 as net
-import heapq
-import time
-import threading
-import ipaddress
-import random
-from typing import Tuple
-
-
-class UE:
-    def __init__(self, id: int, l1ue: phy.UE, l3ue: net.UE, ip: str):
-        self.l1ue = l1ue
-        self.l3ue = l3ue
-        self.id = id
-        self.ip = ip
-        self.connected_to: BaseStation | None = None
-        self.active_packets: int = 0
-
-
-class BaseStation:
-    def __init__(self, id: int, l1tower: phy.Tower):
-        self.tower = l1tower
-        self.id = id
-        self.active_packets: int = 0
-
-
-class Packet:
-    def __init__(
-        self,
-        arrival_time: float,
-        frame: bytes,
-        packet_error_rate: float,
-        src: UE | BaseStation,
-    ):
-        self.arrival_time = arrival_time
-        self.frame = frame
-        self.packet_error_rate = packet_error_rate
-        self.src = src
-        self.src.active_packets += 1
-
-    def is_corrupted(self) -> bool:
-        return random.random() < self.packet_error_rate
-
-    def has_arrived(self) -> bool:
-        return time.time() * 1000 >= self.arrival_time
-
-    def deliver(self):
-        self.src.active_packets -= 1
-
-    def __lt__(self, other: "Packet") -> bool:
-        return self.arrival_time < other.arrival_time
+from packet_queue import PacketQueue, Packet
+from model import UE, BaseStation
 
 
 class Glu:
     def __init__(self):
-        self.cabernet: net.Cabernet = net.Cabernet()
+        self.cabernet: net.Cabernet = net.Cabernet.with_internet(
+            "10.0.0.254", "10.0.0.0/24"
+        )
+        self.subnet = ipaddress.ip_network("10.0.0.0/24")
+        self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
+        self.last_assigned_ip: ipaddress.IPv4Address = None
 
         self.ues: list[UE] = []
         self.base_stations: list[BaseStation] = []
         self.ue_id_counter: int = 0
         self.tower_id_counter: int = 0
 
-        self.upload_queue: list[Packet] = []
-        self.download_queue: list[Packet] = []
+        self.upload_queue = PacketQueue()
+        self.download_queue = PacketQueue()
 
         self.frame_at_ue_ready = threading.Event()
         self.frame_at_tower_ready = threading.Event()
@@ -71,8 +33,6 @@ class Glu:
         self.paused = True
 
         self.pixels_per_meter: float = 1.0
-        self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
-        self.last_assigned_ip: ipaddress.IPv4Address = None
 
     def active_towers(self) -> list[phy.Tower]:
         return [
@@ -131,6 +91,13 @@ class Glu:
             return False
 
         (src, _) = extract_ips_from_frame(frame)
+
+        # packet source is internet: forward to tower
+        if ipaddress.ip_address(src) not in self.subnet:
+            packet = Packet(now_in_ms(), frame, 0.0, None)
+            self.upload_queue.enqueue(packet)
+            return True
+
         src_ue = self.get_ue_by_ip(src)
         # print(f"Polled frame from UE {src}")
 
@@ -141,75 +108,74 @@ class Glu:
         upload_latency = src_ue.connected_to.tower.upload_latency(
             src_ue.l1ue, len(frame), self.active_ues()
         )
+        upload_latency = 0
         packet_error_rate = src_ue.connected_to.tower.upload_packet_error_rate(
             src_ue.l1ue, len(frame), self.active_ues()
         )
         packet = Packet(now_in_ms() + upload_latency, frame, packet_error_rate, src_ue)
-        heapq.heappush(self.upload_queue, packet)
+        self.upload_queue.enqueue(packet)
         return True
 
-    def try_poll_towers(self) -> Tuple[bool, float]:
+    def try_poll_towers(self) -> bool:
+        ready_packets: List[Packet] = self.upload_queue.pop_arrived()
+
         # no packets to process: block until next poll
-        if len(self.upload_queue) == 0:
-            return False, 0
+        if len(ready_packets) == 0:
+            return False
 
-        packet = self.upload_queue[0]
+        for packet in ready_packets:
+            packet.deliver()
+            # arrived packet is corrupted: continue
+            # if packet.is_corrupted():
+            #     continue
+            #     print(packet.packet_error_rate)
+            #     print("corrupted packet droped at tower")
 
-        # packet not yet arrived: wait until it does
-        if not packet.has_arrived():
-            return False, packet.arrival_time - now_in_ms()
+            (_, dst) = extract_ips_from_frame(packet.frame)
 
-        packet = heapq.heappop(self.upload_queue)
-        packet.deliver()
+            # packet destination is internet: forward to cabernet
+            if ipaddress.ip_address(dst) not in self.subnet:
+                self.cabernet.send_frame(packet.frame)
+                continue
 
-        # arrived packet is corrupted: continue
-        if packet.is_corrupted():
-            print(packet.packet_error_rate)
-            # print("corrupted packet droped at tower")
-            return True, 0
+            dst_ue = self.get_ue_by_ip(dst)
 
-        (_, dst) = extract_ips_from_frame(packet.frame)
-        dst_ue = self.get_ue_by_ip(dst)
-        # print(f"Polled frame to UE {dst}")
+            # destination ip is in subnet but UE not found or not connected: drop packet
+            if not dst_ue or not dst_ue.connected_to:
+                print("dropping packet: destination UE not found or not connected")
+                continue
 
-        # destination UE not found or not connected: continue
-        if not dst_ue or dst_ue.connected_to is None:
-            return True, 0
+            download_latency = dst_ue.connected_to.tower.download_latency(
+                dst_ue.l1ue, len(packet.frame), self.active_towers()
+            )
+            download_latency = 0
+            packet_error_rate = dst_ue.connected_to.tower.download_packet_error_rate(
+                dst_ue.l1ue, len(packet.frame), self.active_towers()
+            )
+            packet = Packet(
+                now_in_ms() + download_latency, packet.frame, packet_error_rate, dst_ue
+            )
+            self.download_queue.enqueue(packet)
+        return True
 
-        download_latency = dst_ue.connected_to.tower.download_latency(
-            dst_ue.l1ue, len(packet.frame), self.active_towers()
-        )
-        packet_error_rate = dst_ue.connected_to.tower.download_packet_error_rate(
-            dst_ue.l1ue, len(packet.frame), self.active_towers()
-        )
-        packet = Packet(
-            now_in_ms() + download_latency, packet.frame, packet_error_rate, dst_ue
-        )
-        heapq.heappush(self.download_queue, packet)
-        return True, 0
+    def try_send_frame(self) -> bool:
+        ready_packets: List[Packet] = self.download_queue.pop_arrived()
 
-    def try_send_frame(self) -> tuple[bool, float]:
         # no packets to process: block until next poll
-        if len(self.download_queue) == 0:
-            return False, 0
+        if len(ready_packets) == 0:
+            return False
 
-        packet = self.download_queue[0]
-        # packet not yet arrived: wait until it does
-        if not packet.has_arrived():
-            return False, packet.arrival_time - now_in_ms()
+        for packet in ready_packets:
+            packet.deliver()
 
-        packet = heapq.heappop(self.download_queue)
-        packet.deliver()
-
-        # arrived packet is corrupted: continue
-        if packet.is_corrupted():
-            print(packet.packet_error_rate)
+            # arrived packet is corrupted: continue
+            # if packet.is_corrupted():
+            #     continue
+            #     print(packet.packet_error_rate)
             # print("corrupted packet droped at UE")
-            return True, 0
 
-        # print("sent frame to UE")
-        self.cabernet.send_frame(packet.frame)
-        return True, 0
+            self.cabernet.send_frame(packet.frame)
+        return True
 
     def __run_poll_ues(self):
         while True:
@@ -226,30 +192,25 @@ class Glu:
             if self.paused:
                 self.pause_event.wait()
                 continue
-            polled, sleep = self.try_poll_towers()
+            polled = self.try_poll_towers()
             if polled:
                 # print(f"polled from Towers: {polled}")
                 self.frame_at_tower_ready.set()
             else:
-                if sleep == 0:
-                    self.frame_at_ue_ready.wait()
-                else:
-                    self.frame_at_ue_ready.wait(timeout=sleep / 1000.0)
+                self.frame_at_ue_ready.wait(
+                    timeout=self.upload_queue.next_ready_timeout()
+                )
 
     def __run_send(self):
         while True:
             if self.paused:
                 self.pause_event.wait()
                 continue
-            sent, wait = self.try_send_frame()
+            sent = self.try_send_frame()
             if not sent:
-                if wait == 0:
-                    self.frame_at_tower_ready.wait()
-                else:
-                    self.frame_at_tower_ready.wait(timeout=wait / 1000.0)
-            else:
-                # print(f"sent to UEs: {sent}")
-                ...
+                self.frame_at_tower_ready.wait(
+                    timeout=self.download_queue.next_ready_timeout()
+                )
 
     def run_poll_ues(self) -> threading.Thread:
         poll_t = threading.Thread(
@@ -319,14 +280,16 @@ def demo():
     g.add_ue(164.0, 264.0)
     g.add_ue(590.0, 290.0)
     g.add_ue(420.0, 130.0)
-    towers= [bs.tower for bs in g.base_stations]
-    ues= [ue.l1ue for ue in g.ues]
+    towers = [bs.tower for bs in g.base_stations]
+    ues = [ue.l1ue for ue in g.ues]
     g.syncronize_map()
     for ue in g.ues:
         print(f"UE {ue.id} at ({ue.l1ue.x}, {ue.l1ue.y}) with IP {ue.ip}")
         if ue.connected_to:
             bs = ue.connected_to
-            print(f"  connected to Tower {bs.id} at ({bs.tower.x}, {bs.tower.y}) distance: {phy.ue_tower_dist(ue.l1ue, bs.tower)}")
+            print(
+                f"  connected to Tower {bs.id} at ({bs.tower.x}, {bs.tower.y}) distance: {phy.ue_tower_dist(ue.l1ue, bs.tower)}"
+            )
         else:
             print("  not connected to any tower")
         print(
@@ -337,6 +300,9 @@ def demo():
         )
         print(
             f"  DL mbps: {ue.connected_to.tower.download_bandwidth_mbps(ue.l1ue, towers) if ue.connected_to else 'N/A'}"
+        )
+        print(
+            f"  UL mbps: {ue.connected_to.tower.upload_bandwidth_mbps(ue.l1ue, ues) if ue.connected_to else 'N/A'}"
         )
     # multithreaded polling and sending would go here
     poll_ues_t = g.run_poll_ues()

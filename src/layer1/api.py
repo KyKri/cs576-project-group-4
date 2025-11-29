@@ -41,6 +41,12 @@ class Tower:
             self.t.rate_bps(self.t.sinr_dl(ue_tower_dist(ue, self), distances)) / 1e6
         )  # convert to Mbps
 
+    def upload_bandwidth_mbps(self, ue: UE, active_ues: List[UE]) -> float:
+        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
+        return (
+            self.t.rate_bps(self.t.sinr_ul(ue_tower_dist(ue, self), distances)) / 1e6
+        )  # convert to Mbps
+
     def download_packet_error_rate(
         self, ue: UE, nbytes: int, active_towers: List["Tower"]
     ) -> float:
@@ -85,7 +91,6 @@ def demo():
     print(t2.upload_packet_error_rate(ue1, 1024, ues))
     print(t2.upload_packet_error_rate(ue2, 1024, ues))
     print("---- Upload Packet Error Rates ----")
-
 
 
 if __name__ == "__main__":
