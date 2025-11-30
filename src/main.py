@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -278,12 +279,15 @@ async def activity_endpoint(websocket: WebSocket):
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
     await websocket.accept()
-    await websocket.send_text(f"hello from packet_transfer")
-    # while True:
-    #     for packet in g.upload_queue._queue:
-    #         frame = packet.frame
-    #         (src, dst) = extract_ips_from_frame(frame)
-    #         await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
+    await websocket.send_text(f"hello there")
+    await log_packets(websocket)
+
+async def log_packets(websocket: WebSocket):
+    while True:
+        packet = await asyncio.to_thread(g.log_queue.get)
+        frame = packet.frame
+        (src, dst) = extract_ips_from_frame(frame)
+        await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
 
 
 if __name__ == "__main__":

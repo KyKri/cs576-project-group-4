@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import threading
 import time
@@ -6,6 +7,7 @@ from typing import List
 import layer1 as phy
 import layer3 as net
 from packet_queue import PacketQueue, Packet
+from queue import Queue
 from model import UE, BaseStation
 
 
@@ -23,11 +25,13 @@ class Glu:
         self.ue_id_counter: int = 0
         self.tower_id_counter: int = 0
 
+        self.log_queue = Queue()
         self.upload_queue = PacketQueue()
         self.download_queue = PacketQueue()
 
         self.frame_at_ue_ready = threading.Event()
         self.frame_at_tower_ready = threading.Event()
+        self.frame_at_log_ready = asyncio.Event()
 
         self.pause_event = threading.Event()
         self.paused = True
@@ -108,8 +112,10 @@ class Glu:
 
         # packet source is internet: forward to tower
         if ipaddress.ip_address(src) not in self.subnet:
-            packet = Packet(now_in_ms(), frame, 0.0, None)
+            packet = Packet(now_in_ms(), frame, 0.0, None, None)
             self.upload_queue.enqueue(packet)
+            self.log_queue.put(packet)
+            self.frame_at_log_ready.set()
             return True
 
         src_ue = self.get_ue_by_ip(src)
@@ -126,7 +132,13 @@ class Glu:
         packet_error_rate = src_ue.connected_to.tower.upload_packet_error_rate(
             src_ue.l1ue, len(frame), self.active_ues()
         )
-        packet = Packet(now_in_ms() + upload_latency, frame, packet_error_rate, src_ue)
+        packet = Packet(
+            now_in_ms() + upload_latency,
+            frame,
+            packet_error_rate,
+            src_ue,
+            src_ue.connected_to,
+        )
         self.upload_queue.enqueue(packet)
         return True
 
@@ -167,7 +179,11 @@ class Glu:
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
             )
             packet = Packet(
-                now_in_ms() + download_latency, packet.frame, packet_error_rate, dst_ue
+                now_in_ms() + download_latency,
+                packet.frame,
+                packet_error_rate,
+                dst_ue.connected_to,
+                dst_ue,
             )
             self.download_queue.enqueue(packet)
         return True
