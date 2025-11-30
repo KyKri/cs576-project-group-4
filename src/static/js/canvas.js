@@ -81,6 +81,7 @@ function updateCanvas(){
         const distance = Math.hypot(user.x - station.x, user.y - station.y);
 
         ctx.strokeStyle = "red";
+        if(UEList[userId].active_packets > 0){ctx.strokeStyle = "white";}
         ctx.beginPath();
         ctx.moveTo(user.x, user.y);
         ctx.lineTo(station.x, station.y);

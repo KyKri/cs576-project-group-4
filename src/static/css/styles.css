@@ -46,3 +46,14 @@ p{
 .font-awesome-icon::before{
     font-size:1em;
 }
+
+#details-device p{
+    margin-bottom:10px;
+}
+#details-device p:last-of-type{
+    margin-bottom:5px;
+}
+#ue-link-details{
+    padding-left:20px;
+    margin:0;
+}

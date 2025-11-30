@@ -149,6 +149,7 @@ function toggleBaseStation(id){
 }
 
 function updateDeviceDetails(){
+    //exit early if no icon is selected
     if(lastSelectedIcon == null){return;}
     const deviceId = lastSelectedIcon.id;
     const { deviceType, id } = extractIDNumber(deviceId);
@@ -169,6 +170,9 @@ function updateDeviceDetails(){
                 //console.log(result);
                 UEList[result.user_equipment.id] = result.user_equipment;
                 writeUserEquipmentDetails(result.user_equipment);
+                getUEBaseStationStatus(id).then(result => {
+                    writeLinkDetails(result);
+                })
                 return result;
             });
         } catch (err) { console.log(err); }
@@ -178,10 +182,7 @@ function updateDeviceDetails(){
 function writeBaseStationDetails(bs){
     document.getElementById('details-device').innerHTML = `
     <p>Base Station ${bs.id}</p>
-    <ul>
-        <li>Status: ${bs.on}</li>
-        <li>Link Quality: </li>
-    </ul>
+    <pStatus: ${bs.on}</p>
     <button onclick="event.preventDefault(); toggleBaseStation(${bs.id});">Toggle On/Off</button>
     <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
@@ -192,12 +193,30 @@ function writeBaseStationDetails(bs){
 function writeUserEquipmentDetails(ue){
     document.getElementById('details-device').innerHTML = `
     <p>User Equipment ${ue.id}</p>
-    <ul>
-        <li>IP Address: ${ue.ip}</li>
-        <li>Connected Base Station ID: ${ue.bs}</li>
+    <p>IP Address: ${ue.ip}</p>
+    <p>Connected Base Station ID: ${ue.bs}</p>
+    <ul id="ue-link-details">
+        <li>Upload/Download Latency:<br>
+        0.00 | 0.00 </li>
+        <li>Upload/Download Bandwidth:<br>
+        0.00 | 0.00 </li>
+        <li>Upload/Download Packet Error Rate:<br>
+        0.00 | 0.00 </li>
     </ul>
     <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
     </button> -->`;
     return ue.id;
+}
+
+function writeLinkDetails(result){
+    document.getElementById('ue-link-details').innerHTML = `
+        <li>Upload/Download Latency:<br>
+        ${result.upload_latency.toFixed(2)} | ${result.download_latency.toFixed(2)} </li>
+        <li>Upload/Download Bandwidth:<br>
+        ${result.upload_bandwidth.toFixed(2)} | ${result.download_latency.toFixed(2)} </li>
+        <li>Upload/Download Packet Error Rate:<br>
+        ${result.upload_per.toFixed(2)} | ${result.download_per.toFixed(2)} </li>
+    `;
+    return result;
 }

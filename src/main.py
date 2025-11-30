@@ -144,11 +144,12 @@ async def init_userequipment(payload: UserEquipmentInit):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
+            "active_packets": ue.active_packets
         },
     }
 
 
-@app.post("/get/basestation/{bs_id}")
+@app.get("/get/basestation/{bs_id}")
 async def get_basestation(bs_id: int):
     bs = g.get_tower(bs_id)
     return {
@@ -161,7 +162,7 @@ async def get_basestation(bs_id: int):
     }
 
 
-@app.post("/get/userequipment/{ue_id}")
+@app.get("/get/userequipment/{ue_id}")
 async def get_userequipment(ue_id: int):
     ue = g.get_ue(ue_id)
 
@@ -176,9 +177,43 @@ async def get_userequipment(ue_id: int):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
+            "active_packets": ue.active_packets
         }
     }
 
+@app.get("/check/userequipment/{ue_id}")
+async def check_userequipment(ue_id: int):
+    ue = g.get_ue(ue_id)
+
+    return {
+        "id": ue.id,
+        "active_packets": ue.active_packets
+    }
+
+@app.get("/check/link/{ue_id}")
+async def check_link(ue_id: int):
+    ue = g.get_ue(ue_id)
+    l1ue = ue.l1ue
+    nbytes = 1024
+    #assumes that UE is already connected to base station. 
+    #function should not call if UE is not connected to a base station
+    bs = ue.connected_to
+
+    up_latency = bs.tower.upload_latency(l1ue, nbytes, g.active_ues())
+    dn_latency = bs.tower.download_latency(l1ue, nbytes, g.active_towers())
+    up_bandwidth = bs.tower.upload_bandwidth_mbps(l1ue, g.active_ues())
+    dn_bandwidth = bs.tower.download_bandwidth_mbps(l1ue, g.active_towers())
+    up_packeterr = bs.tower.upload_packet_error_rate(l1ue, nbytes, g.active_ues())
+    dn_packeterr = bs.tower.download_packet_error_rate(l1ue, nbytes, g.active_towers())
+
+    return {
+        "upload_latency": up_latency,
+        "download_latency": dn_latency,
+        "upload_bandwidth": up_bandwidth,
+        "download_bandwidth": dn_bandwidth,
+        "upload_per": up_packeterr,
+        "download_per": dn_packeterr 
+    }
 
 # Sample call
 """

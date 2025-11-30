@@ -1,6 +1,7 @@
 var ws = new WebSocket("ws://localhost:8000/activity");
 var UEList = [];
 var BSList = [];
+var checkInterval;
 
 ws.onmessage = function(event) {
     var messages = document.getElementById('messages');
@@ -55,6 +56,16 @@ async function control(action) {
     } else if (action === "stop") {
         inputs.forEach(el => el.disabled = false);
         console.log("stop clicked — form enabled");
+    }
+
+    //code that might have to be moved elsewhere 
+    if (action === "start"){
+        if (!checkInterval){
+            checkInterval = setInterval(simulationStatus, 1000);
+        }
+    } else if (action === "pause" || action === "stop"){
+        clearInterval(checkInterval);
+        checkInterval = null;
     }
 
     try {
