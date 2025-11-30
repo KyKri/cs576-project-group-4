@@ -56,13 +56,16 @@ async def index(request: Request):
 @app.post("/control/start")
 async def control_start():
     # Logic to start
+    g.run(log_to_sdout=False)
     g.toggle_pause()
+    g.block()
     return {"message": "Start action received"}
 
 
 @app.post("/control/pause")
 async def control_pause():
     # Logic to pause
+    g.run(log_to_sdout=False)
     g.toggle_pause()
     return {"message": "Pause action received"}
 
@@ -85,9 +88,7 @@ async def init_simulation(payload: SimulationConfig):
     g.set_starting_ip(starting_ip)
     g.set_pixels_per_meter(pixels_per_meter)
 
-    poll_ues_t = g.run_poll_ues()
-    poll_towers_t = g.run_poll_towers()
-    send_t = g.run_send()
+    g.run()
     g.toggle_pause()  # unpause
     
 
