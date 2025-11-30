@@ -40,11 +40,11 @@ class Glu:
         return [
             bs.tower
             for bs in self.base_stations
-            if bs.tower.on and bs.active_packets > 0
+            if bs.tower.on and bs.active_upload_packets > 0
         ]
 
     def active_ues(self) -> list[phy.UE]:
-        return [ue.l1ue for ue in self.ues if ue.active_packets > 0]
+        return [ue.l1ue for ue in self.ues if ue.active_upload_packets > 0]
 
     def add_ue(self, x: float, y: float) -> UE:
         ip = str(self.generate_next_ip())
