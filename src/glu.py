@@ -32,15 +32,17 @@ class Glu:
 
         self.pixels_per_meter: float = 1.0
 
+        self.threads: list[threading.Thread] = []
+
     def active_towers(self) -> list[phy.Tower]:
         return [
             bs.tower
             for bs in self.base_stations
-            if bs.tower.on and bs.active_packets > 0
+            if bs.tower.on and bs.active_upload_packets > 0
         ]
 
     def active_ues(self) -> list[phy.UE]:
-        return [ue.l1ue for ue in self.ues if ue.active_packets > 0]
+        return [ue.l1ue for ue in self.ues if ue.active_upload_packets > 0]
 
     def add_ue(self, x: float, y: float) -> UE:
         ip = str(self.generate_next_ip())
@@ -222,6 +224,53 @@ class Glu:
                     timeout=self.download_queue.next_ready_timeout()
                 )
 
+    def __run_stat(self, log_to_sdout: bool = True):
+        while True:
+            towers = [bs.tower for bs in self.base_stations]
+            ues = [ue.l1ue for ue in self.ues]
+            self.syncronize_map()
+            time.sleep(0.5)
+            show = ""
+            show += "\n" + "\033[2J\033[H\n"  # Clear + move cursor home
+            show += "\n" + f"=== Glu Stats {'pased' if self.paused else 'running'} ==="
+            for ue in self.ues:
+                show += (
+                    "\n" + f"UE {ue.id} at ({ue.l1ue.x}, {ue.l1ue.y}) with IP {ue.ip}"
+                )
+                bs = ue.connected_to
+                if ue.connected_to:
+                    bs = ue.connected_to
+                    show += (
+                        "\n"
+                        + f"  connected to Tower {bs.id} at ({bs.tower.x}, {bs.tower.y}) distance: {phy.ue_tower_dist(ue.l1ue, bs.tower)}"
+                    )
+
+                else:
+                    show += "\n" + "  not connected to any tower"
+                show += (
+                    "\n"
+                    + f"  DL QPSK PER: {bs.tower.download_packet_error_rate(ue.l1ue, 1024, towers) if bs else 'N/A'}"
+                )
+
+                show += (
+                    "\n"
+                    + f"  UL QPSK PER: {bs.tower.upload_packet_error_rate(ue.l1ue, 1024, ues) if bs else 'N/A'}"
+                )
+
+                show += (
+                    "\n"
+                    + f"  DL mbps: {bs.tower.download_bandwidth_mbps(ue.l1ue, towers) if bs else 'N/A'}"
+                )
+
+                show += (
+                    "\n"
+                    + f"  UL mbps: {bs.tower.upload_bandwidth_mbps(ue.l1ue, ues) if bs else 'N/A'}"
+                )
+            if log_to_sdout:
+                print(show)
+            with open("glu_stat.txt", "w") as f:
+                f.write(show)
+
     def run_poll_ues(self) -> threading.Thread:
         poll_t = threading.Thread(
             target=self.__run_poll_ues, name="GluPollUEs", daemon=True
@@ -240,6 +289,24 @@ class Glu:
         send_t = threading.Thread(target=self.__run_send, name="GluSend", daemon=True)
         send_t.start()
         return send_t
+
+    def run_stat(self, log_to_sdout: bool = True) -> threading.Thread:
+        stat_t = threading.Thread(
+            target=self.__run_stat, args=(log_to_sdout,), name="GluStat", daemon=True
+        )
+        stat_t.start()
+        return stat_t
+
+    def run(self, log_to_sdout: bool = True) -> None:
+        t1 = self.run_poll_ues()
+        t2 = self.run_poll_towers()
+        t3 = self.run_send()
+        t4 = self.run_stat(log_to_sdout)
+        self.threads.extend([t1, t2, t3, t4])
+
+    def block(self) -> None:
+        for t in self.threads:
+            t.join()
 
     def get_ue_by_ip(self, ip: str) -> UE | None:
         for ue in self.ues:
@@ -332,6 +399,10 @@ def stat(g):
             print(
                 f"  UL mbps: {ue.connected_to.tower.upload_bandwidth_mbps(ue.l1ue, ues) if ue.connected_to else 'N/A'}"
             )
+
+    g.run()
+    g.toggle_pause()  # unpause
+    g.block()
 
 
 if __name__ == "__main__":

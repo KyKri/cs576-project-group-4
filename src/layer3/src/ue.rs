@@ -89,7 +89,7 @@ impl UE {
             Ok(nbytes) => match etherparse::Ipv4HeaderSlice::from_slice(&buf[..nbytes]) {
                 Ok(_) => Ok(Some(buf[..nbytes].to_vec())),
                 Err(e) => {
-                    eprintln!("Failed to parse IPv4 header: {e}");
+                    // eprintln!("Failed to parse IPv4 header: {e}");
                     Ok(None)
                 }
             },

@@ -14,13 +14,17 @@ class Packet:
         frame: bytes,
         packet_error_rate: float,
         src: UE | BaseStation | None,
+        dst: UE | BaseStation | None,
     ):
         self.arrival_time = arrival_time
         self.frame = frame
         self.packet_error_rate = packet_error_rate
         self.src = src
+        self.dst = dst
         if self.src:
-            self.src.active_packets += 1
+            self.src.active_upload_packets += 1
+        if self.dst:
+            self.dst.active_download_packets += 1
 
     def is_corrupted(self) -> bool:
         return random.random() < self.packet_error_rate
@@ -30,7 +34,9 @@ class Packet:
 
     def deliver(self):
         if self.src:
-            self.src.active_packets -= 1
+            self.src.active_upload_packets -= 1
+        if self.dst:
+            self.dst.active_download_packets -= 1
 
     def __lt__(self, other: "Packet") -> bool:
         return self.arrival_time < other.arrival_time
@@ -52,7 +58,6 @@ class PacketQueue:
             while len(self._queue) > 0 and self._queue[0].has_arrived():
                 item = heapq.heappop(self._queue)
                 matched.append(item)
-            # matched = [p for p in self._queue if p.has_arrived()]
         return matched
 
     def next_ready_timeout(self):
