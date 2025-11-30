@@ -85,6 +85,12 @@ async def init_simulation(payload: SimulationConfig):
     g.set_starting_ip(starting_ip)
     g.set_pixels_per_meter(pixels_per_meter)
 
+    poll_ues_t = g.run_poll_ues()
+    poll_towers_t = g.run_poll_towers()
+    send_t = g.run_send()
+    g.toggle_pause()  # unpause
+    
+
     return {
         "ok": True,
         "message": "Simulation Initialized",
@@ -318,4 +324,4 @@ async def transfer_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=8000)
+    uvicorn.run(app,host="0.0.0.0", port=8000)
