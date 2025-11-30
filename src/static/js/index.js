@@ -1,4 +1,5 @@
 var ws = new WebSocket("ws://localhost:8000/activity");
+var packets = new WebSocket("ws://localhost:8000/packet_transfer");
 var UEList = [];
 var BSList = [];
 
@@ -15,6 +16,10 @@ function sendMessage(event) {
     ws.send(input.value);
     input.value = '';
     event.preventDefault();
+};
+
+packets.onmessage = function(event) {
+    console.log(event.data);
 };
 
 function addBaseStation(){
