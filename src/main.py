@@ -71,7 +71,7 @@ async def init_simulation():
     poll_ues_t = g.run_poll_ues()
     poll_towers_t = g.run_poll_towers()
     send_t = g.run_send()
-    g.run()
+    g.run(log_to_sdout=False) #set log_to_sdout to True/default for debugging
     g.toggle_pause()  # unpause
     
     return {
