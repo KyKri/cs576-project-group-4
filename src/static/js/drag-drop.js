@@ -46,6 +46,7 @@ function releaseDrag(event){
                     updateEveryUserEquipment().then(result => {
                         updateCanvas();
                         updateDeviceDetails();
+                        draggedIcon = null;
                     });
                 });
             }
@@ -57,6 +58,7 @@ function releaseDrag(event){
                 }).then(result => {
                     updateCanvas();
                     updateDeviceDetails();
+                    draggedIcon = null;
                 });
             }
         }
@@ -78,6 +80,7 @@ function releaseDrag(event){
                         updateEveryUserEquipment().then(result => {
                             updateCanvas();
                             updateDeviceDetails();
+                            draggedIcon = null;
                         });
                     });
                 } catch (err) { console.log(err); }
@@ -93,13 +96,13 @@ function releaseDrag(event){
                         lastIcon.classList.add('active');
                     }).then(result => {
                         updateCanvas();
+                        draggedIcon = null;
                     });
                 } catch (err) { console.log(err); }
             }
         }
     }
 
-    draggedIcon = null;
     canvas.removeEventListener('mousemove', dragMove);
 }
 
@@ -182,7 +185,7 @@ function updateDeviceDetails(){
 function writeBaseStationDetails(bs){
     document.getElementById('details-device').innerHTML = `
     <p>Base Station ${bs.id}</p>
-    <pStatus: ${bs.on}</p>
+    <p>Status: ${bs.on}</p>
     <button onclick="event.preventDefault(); toggleBaseStation(${bs.id});">Toggle On/Off</button>
     <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
@@ -192,8 +195,7 @@ function writeBaseStationDetails(bs){
 
 function writeUserEquipmentDetails(ue){
     document.getElementById('details-device').innerHTML = `
-    <p>User Equipment ${ue.id}</p>
-    <p>IP Address: ${ue.ip}</p>
+    <p>User Equipment ${ue.id} - IP Address: ${ue.ip}</p>
     <p>Connected Base Station ID: ${ue.bs}</p>
     <ul id="ue-link-details">
         <li>Upload/Download Latency:<br>

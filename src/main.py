@@ -331,7 +331,7 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
     await websocket.accept()
-    await websocket.send_text("hello there")
+    await websocket.send_text("Websocket Listening")
     try:
         await log_packets(websocket)
     except WebSocketDisconnect:
@@ -350,7 +350,7 @@ async def log_packets(websocket: WebSocket):
     loop = asyncio.get_running_loop()
 
     # You can keep or drop this greeting, up to you
-    await websocket.send_text("hello there")
+    await websocket.send_text("Log Packet Greeting")
 
     while True:
         try:

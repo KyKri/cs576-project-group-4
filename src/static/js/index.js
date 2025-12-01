@@ -1,27 +1,18 @@
-var ws = new WebSocket("ws://localhost:8000/activity");
 var packets = new WebSocket("ws://localhost:8000/packet_transfer");
+var logCount = 0;
 var UEList = [];
 var BSList = [];
 var checkInterval; //for running asynchronous function that periodically checks for ue link status
 var simulationRunning = false;
 
-ws.onmessage = function(event) {
-    var messages = document.getElementById('messages');
-    var message = document.createElement('li');
-    var content = document.createTextNode(event.data);
-    message.appendChild(content);
-    messages.appendChild(message);
-};
-
-function sendMessage(event) {
-    var input = document.getElementById("messageText");
-    ws.send(input.value);
-    input.value = '';
-    event.preventDefault();
-};
-
 packets.onmessage = function(event) {
-    console.log(event.data);
+    //console.log(event.data);
+    const logBox = document.getElementById('logs');
+    const newLog = document.createElement('p');
+    newLog.textContent = `${logCount}: ${event.data}`;
+    logBox.appendChild(newLog);
+    logBox.scrollTop = logBox.scrollHeight;
+    logCount ++;
 };
 
 function addBaseStation(){
@@ -65,24 +56,26 @@ async function control(action) {
                 <i class="fas fa-pause"></i> Pause Simulation
             </button>`
         if (!checkInterval){
-            checkInterval = setInterval(simulationStatus, 1000);
+            checkInterval = setInterval(simulationStatus, 500);
         }
-        return simulationRunning;
+    }
+    else{
+        try {
+            const response = await fetch('/control/pause', {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                console.warn('Network response was not ok ' + response.statusText);
+            }
+            else {
+                const data = await response.json();
+                console.log(data);
+                simulationRunning = !data.paused;
+            }
+        } catch (error) {console.error(error);}
     }
 
-    try {
-        const response = await fetch('/control/pause', {
-            method: 'POST'
-        });
-
-        if (!response.ok) {
-            console.warn('Network response was not ok ' + response.statusText);
-        }
-        else {
-            const data = await response.json();
-            simulationRunning = !data.paused;
-        }
-    } catch (error) {console.error(error);}
 
     if(simulationRunning){
         controls.innerHTML = `
@@ -113,7 +106,7 @@ document.getElementById("configuration").addEventListener("submit", async functi
     //const pixelsPerMeter = parseFloat(document.getElementById("grid-ppm").value);
     //const networkType = document.getElementById("network-type").value;
     // Rudimentary input sanity checks
-    if (isNaN(height) || isNaN(width) || isNaN(pixelsPerMeter) || height <= 0 || width <= 0) {
+    if (isNaN(height) || isNaN(width) || height <= 0 || width <= 0) {
         alert("Please enter valid positive numbers for grid size.");
         return;
     }

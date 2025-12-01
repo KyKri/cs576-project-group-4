@@ -35,6 +35,10 @@ function drawCircle(ctx, x, y, r){
     return [x, y];
 }
 
+//global variable for animating dashed line offset of UE links
+let linkOffset = 0;
+let dash = 5;
+
 function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packets){
     const offset = 2;
     const angle = Math.atan2(endY - startY, endX - startX);
@@ -51,32 +55,30 @@ function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packe
     const endXb = endX + offsetX;
     const endYb = endY + offsetY;
 
-    ctx.setLineDash([4, 2]);
+    ctx.setLineDash([dash, 2]);
     ctx.lineDashOffset = linkOffset;
 
-    //user to station
+    //station to user
     ctx.strokeStyle = "red";
-    if(up_packets > 0){ctx.strokeStyle = "white";}
+    if(down_packets > 0){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(startXa, startYa);
     ctx.lineTo(endXa, endYa);
     ctx.stroke();
 
-    //station to user
+    //user to station
     ctx.strokeStyle = "red";
-    if(down_packets > 0){ctx.strokeStyle = "white";}
+    if(up_packets > 0){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(endXb, endYb);
     ctx.lineTo(startXb, startYb);
     ctx.stroke();
 }
 
-//global variable for animating dashed line offset of UE links
-let linkOffset = 0;
 //function for animating dashed line offset of UE links
 function march() {
   linkOffset++;
-  if (linkOffset > 5) {linkOffset = 0;}
+  if (linkOffset > dash+1) {linkOffset = 0;}
   updateCanvas();
   setTimeout(march, 20);
 }
@@ -122,8 +124,6 @@ function updateCanvas(){
         //baseStationsOnCanvas.each(function(j, element2){})
     });
 }
-
-
 
 //load base stations and user equipment on canvas if they already exist (upon window refresh)
 /*
