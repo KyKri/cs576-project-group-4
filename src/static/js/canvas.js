@@ -24,26 +24,67 @@ function getElementCoordinates(element){
     return {x, y};
 }
 
-function drawCircle(x, y, r){
-    const canvas = document.getElementById('simulation');
-    const ctx = canvas.getContext("2d");
-
-    //circle
-    /*
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.strokeStyle = "white";
-    ctx.stroke();
-    */
-
+function drawCircle(ctx, x, y, r){
     //gradient
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
     gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)'); 
     gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
     ctx.fillStyle = gradient;
-    ctx.fillRect(x-r, y-r, x+r, y+r);
-    
+    ctx.fillRect(x-r, y-r, 2*r, 2*r);
+
     return [x, y];
+}
+
+//global variable for animating dashed line offset of UE links
+let linkOffset = 0;
+let dash = 5;
+
+function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packets){
+    const offset = 2;
+    const angle = Math.atan2(endY - startY, endX - startX);
+
+    const offsetX = offset * Math.sin(angle);
+    const offsetY = offset * -Math.cos(angle);
+
+    const startXa = startX - offsetX;
+    const startYa = startY - offsetY;
+    const endXa = endX - offsetX;
+    const endYa = endY - offsetY;
+    const startXb = startX + offsetX;
+    const startYb = startY + offsetY;
+    const endXb = endX + offsetX;
+    const endYb = endY + offsetY;
+
+    ctx.setLineDash([dash, 2]);
+    ctx.lineDashOffset = linkOffset;
+
+    //station to user
+    ctx.strokeStyle = "red";
+    if(down_packets > 0){ctx.strokeStyle = "white";}
+    ctx.beginPath();
+    ctx.moveTo(startXa, startYa);
+    ctx.lineTo(endXa, endYa);
+    ctx.stroke();
+
+    //user to station
+    ctx.strokeStyle = "red";
+    if(up_packets > 0){ctx.strokeStyle = "white";}
+    ctx.beginPath();
+    ctx.moveTo(endXb, endYb);
+    ctx.lineTo(startXb, startYb);
+    ctx.stroke();
+}
+
+//function for animating dashed line offset of UE links
+function march() {
+  linkOffset++;
+  if (linkOffset > dash+1) {linkOffset = 0;}
+  updateCanvas();
+  setTimeout(march, 20);
+}
+//initiate animation
+window.onload = function(){
+    march();
 }
 
 function updateCanvas(){
@@ -65,8 +106,7 @@ function updateCanvas(){
         if(element.classList.contains('off')){return true;} //skip base station if it has been toggled off
 
         const { x, y } = getElementCoordinates(element);
-        //API CALL NEEDED: get actual range of each base station
-        drawCircle(x, y, 80);
+        drawCircle(ctx, x, y, 80);
     });
 
     //draw lines connectiong end users connecting to every associated base station
@@ -74,18 +114,12 @@ function updateCanvas(){
         const user = getElementCoordinates(element);
         const userId = extractIDNumber(element.id).id;
         const stationId = UEList[userId].bs;
-        if(stationId < 0){return true;}
+        if(stationId < 0){return true;}//no connection is no valid base station id
         const station = getElementCoordinates(document.getElementById("BaseStation_" + stationId));
         //console.log("UserEquipment_" + userId, "BaseStation_" + stationId);
 
-        //if distance needs to be checked
-        const distance = Math.hypot(user.x - station.x, user.y - station.y);
-
-        ctx.strokeStyle = "red";
-        ctx.beginPath();
-        ctx.moveTo(user.x, user.y);
-        ctx.lineTo(station.x, station.y);
-        ctx.stroke();
+        drawDoubleLines(ctx, user.x, user.y, station.x, station.y, 
+            UEList[userId].up_packets, UEList[userId].down_packets);
 
         //baseStationsOnCanvas.each(function(j, element2){})
     });

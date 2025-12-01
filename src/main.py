@@ -75,43 +75,30 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
-@app.post("/control/start")
-async def control_start():
-    g.run(log_to_sdout=False)
-    g.toggle_pause()
-    return {"message": "Start action received"}
-
-
 @app.post("/control/pause")
 async def control_pause():
     g.toggle_pause()
-    return {"message": "Pause action received"}
-
-
-@app.post("/control/stop")
-async def control_stop():
-    # Logic to stop
-    g.toggle_pause()
-    return {"message": "Stop action received"}
+    return {"paused": g.paused}
 
 
 @app.post("/init/simulation")
-async def init_simulation(payload: SimulationConfig):
-    height = payload.height
-    width = payload.width
-    pixels_per_meter = payload.pixels_per_meter
-    network_type = payload.network_type
-    starting_ip = payload.starting_ip
+async def init_simulation():
+    #pixels_per_meter = payload.pixels_per_meter
+    #network_type = payload.network_type
+    #starting_ip = payload.starting_ip
 
-    g.set_starting_ip(starting_ip)
-    g.set_pixels_per_meter(pixels_per_meter)
+    #g.set_starting_ip(starting_ip)
+    g.set_pixels_per_meter(1)
 
-    g.run()
+    poll_ues_t = g.run_poll_ues()
+    poll_towers_t = g.run_poll_towers()
+    send_t = g.run_send()
+    g.run(log_to_sdout=False) #set log_to_sdout to True/default for debugging
     g.toggle_pause()  # unpause
-
     return {
         "ok": True,
         "message": "Simulation Initialized",
+        "paused": g.paused
     }
 
 @app.post("/configure")
@@ -183,11 +170,13 @@ async def init_userequipment(payload: UserEquipmentInit):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
+            "up_packets": ue.active_upload_packets,
+            "down_packets": ue.active_download_packets
         },
     }
 
 
-@app.post("/get/basestation/{bs_id}")
+@app.get("/get/basestation/{bs_id}")
 async def get_basestation(bs_id: int):
     bs = g.get_tower(bs_id)
     return {
@@ -200,7 +189,7 @@ async def get_basestation(bs_id: int):
     }
 
 
-@app.post("/get/userequipment/{ue_id}")
+@app.get("/get/userequipment/{ue_id}")
 async def get_userequipment(ue_id: int):
     ue = g.get_ue(ue_id)
 
@@ -215,9 +204,45 @@ async def get_userequipment(ue_id: int):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
+            "up_packets": ue.active_upload_packets,
+            "down_packets": ue.active_download_packets
         }
     }
 
+@app.get("/check/userequipment/{ue_id}")
+async def check_userequipment(ue_id: int):
+    ue = g.get_ue(ue_id)
+
+    return {
+        "id": ue.id,
+        "up_packets": ue.active_upload_packets,
+        "down_packets": ue.active_download_packets
+    }
+
+@app.get("/check/link/{ue_id}")
+async def check_link(ue_id: int):
+    ue = g.get_ue(ue_id)
+    l1ue = ue.l1ue
+    nbytes = 1024
+    #assumes that UE is already connected to base station. 
+    #function should not call if UE is not connected to a base station
+    bs = ue.connected_to
+
+    up_latency = bs.tower.upload_latency(l1ue, nbytes, g.active_ues())
+    dn_latency = bs.tower.download_latency(l1ue, nbytes, g.active_towers())
+    up_bandwidth = bs.tower.upload_bandwidth_mbps(l1ue, g.active_ues())
+    dn_bandwidth = bs.tower.download_bandwidth_mbps(l1ue, g.active_towers())
+    up_packeterr = bs.tower.upload_packet_error_rate(l1ue, nbytes, g.active_ues())
+    dn_packeterr = bs.tower.download_packet_error_rate(l1ue, nbytes, g.active_towers())
+
+    return {
+        "upload_latency": up_latency,
+        "download_latency": dn_latency,
+        "upload_bandwidth": up_bandwidth,
+        "download_bandwidth": dn_bandwidth,
+        "upload_per": up_packeterr,
+        "download_per": dn_packeterr 
+    }
 
 # Sample call
 """
@@ -306,7 +331,7 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
     await websocket.accept()
-    await websocket.send_text("hello there")
+    await websocket.send_text("Websocket Listening")
     try:
         await log_packets(websocket)
     except WebSocketDisconnect:
@@ -325,7 +350,7 @@ async def log_packets(websocket: WebSocket):
     loop = asyncio.get_running_loop()
 
     # You can keep or drop this greeting, up to you
-    await websocket.send_text("hello there")
+    await websocket.send_text("Log Packet Greeting")
 
     while True:
         try:

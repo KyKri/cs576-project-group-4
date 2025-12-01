@@ -13,9 +13,7 @@ from model import UE, BaseStation
 
 class Glu:
     def __init__(self):
-        self.cabernet: net.Cabernet = net.Cabernet.with_internet(
-            "10.0.0.254", "10.0.0.0/24"
-        )
+        self.cabernet: net.Cabernet = net.Cabernet()
         self.subnet = ipaddress.ip_network("10.0.0.0/24")
         self.starting_ip: ipaddress.IPv4Address = ipaddress.ip_address("10.0.0.1")
         self.last_assigned_ip: ipaddress.IPv4Address = None
@@ -376,6 +374,8 @@ def demo():
     g.run()
     g.toggle_pause()  # unpause
     g.block()
+
+
 
 
 if __name__ == "__main__":
