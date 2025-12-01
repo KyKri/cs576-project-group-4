@@ -75,10 +75,11 @@ function simulationStatus(){
     UEList.forEach(function(ue, index){
         checkUEActivePackets(ue.id).then(result => {
             //console.log(result);
-            UEList[result.id].active_packets = result.active_packets;
+            UEList[result.id].up_packets = result.up_packets;
+            UEList[result.id].down_packets = result.down_packets;
 
             //(for testing) randomly change the active_packet count to >0 to update UE connectio
-            if(Math.random() > 0.7){UEList[result.id].active_packets = 1;}
+            //if(Math.random() > 0.7){UEList[result.id].up_packets = 1;}
         }).then(result => {
             updateCanvas();
         });

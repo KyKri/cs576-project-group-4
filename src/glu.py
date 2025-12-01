@@ -357,52 +357,12 @@ def demo():
     g.add_ue(164.0, 264.0)
     g.add_ue(590.0, 290.0)
     g.add_ue(420.0, 130.0)
-    # multithreaded polling and sending would go here
-    state_t = threading.Thread(target=lambda: stat(g), name="stat", daemon=True)
-    state_t.start()
-
-    poll_ues_t = g.run_poll_ues()
-    poll_towers_t = g.run_poll_towers()
-    send_t = g.run_send()
-    g.toggle_pause()  # unpause
-    poll_ues_t.join()
-    poll_towers_t.join()
-    send_t.join()
-    state_t.join()
-
-
-def stat(g):
-    towers = [bs.tower for bs in g.base_stations]
-    ues = [ue.l1ue for ue in g.ues]
-    g.syncronize_map()
-    while True:
-        time.sleep(0.5)
-        print("\033[2J\033[H")   # Clear + move cursor home
-        for ue in g.ues:
-            print(f"UE {ue.id} at ({ue.l1ue.x}, {ue.l1ue.y}) with IP {ue.ip}")
-            if ue.connected_to:
-                bs = ue.connected_to
-                print(
-                    f"  connected to Tower {bs.id} at ({bs.tower.x}, {bs.tower.y}) distance: {phy.ue_tower_dist(ue.l1ue, bs.tower)}"
-                )
-            else:
-                print("  not connected to any tower")
-            print(
-                f"  DL QPSK PER: {ue.connected_to.tower.download_packet_error_rate(ue.l1ue, 1024, towers) if ue.connected_to else 'N/A'}"
-            )
-            print(
-                f"  UL QPSK PER: {ue.connected_to.tower.upload_packet_error_rate(ue.l1ue, 1024, ues) if ue.connected_to else 'N/A'}"
-            )
-            print(
-                f"  DL mbps: {ue.connected_to.tower.download_bandwidth_mbps(ue.l1ue, towers) if ue.connected_to else 'N/A'}"
-            )
-            print(
-                f"  UL mbps: {ue.connected_to.tower.upload_bandwidth_mbps(ue.l1ue, ues) if ue.connected_to else 'N/A'}"
-            )
 
     g.run()
     g.toggle_pause()  # unpause
     g.block()
+
+
 
 
 if __name__ == "__main__":

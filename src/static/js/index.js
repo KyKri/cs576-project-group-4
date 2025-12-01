@@ -1,7 +1,8 @@
 var ws = new WebSocket("ws://localhost:8000/activity");
 var UEList = [];
 var BSList = [];
-var checkInterval;
+var checkInterval; //for running asynchronous function that periodically checks for ue link status
+var simulationRunning = false;
 
 ws.onmessage = function(event) {
     var messages = document.getElementById('messages');
@@ -47,33 +48,26 @@ function extractIDNumber(deviceId){
 // Hanlde simulation controls
 async function control(action) {
     const form = document.getElementById("configuration");
+    const controls = document.getElementById("controls");
     const inputs = form.querySelectorAll("input, select, button");
 
-    // Prevent changing configuration during running simulation
-    if (action === "start" || action === "pause") {
-        inputs.forEach(el => el.disabled = true);
-        console.log(`${action} clicked — form disabled`);
-    } else if (action === "stop") {
-        inputs.forEach(el => el.disabled = false);
-        console.log("stop clicked — form enabled");
-    }
-
-    //code that might have to be moved elsewhere 
-    if (action === "start"){
+    //this should only execute on the first instance of clicking 'start'
+    if (action === "start" && !simulationRunning){
+        await initSimulation();
+        simulationRunning = true;
+        controls.innerHTML = `
+            <button onclick="event.preventDefault(); control()">
+                <i class="fas fa-pause"></i> Pause Simulation
+            </button>`
         if (!checkInterval){
             checkInterval = setInterval(simulationStatus, 1000);
         }
-    } else if (action === "pause" || action === "stop"){
-        clearInterval(checkInterval);
-        checkInterval = null;
+        return simulationRunning;
     }
 
     try {
-        const response = await fetch('/control/' + action, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const response = await fetch('/control/pause', {
+            method: 'POST'
         });
 
         if (!response.ok) {
@@ -81,11 +75,28 @@ async function control(action) {
         }
         else {
             const data = await response.json();
-            console.log(data);
+            simulationRunning = !data.paused;
         }
+    } catch (error) {console.error(error);}
 
-    } catch (error) {
-        console.error(error);
+    if(simulationRunning){
+        controls.innerHTML = `
+            <button onclick="event.preventDefault(); control()">
+                <i class="fas fa-pause"></i> Pause Simulation
+            </button>`
+        // Prevent changing configuration during running simulation
+        inputs.forEach(el => el.disabled = true);
+        if (!checkInterval){
+            checkInterval = setInterval(simulationStatus, 1000);
+        }
+    }else{
+        controls.innerHTML = `
+            <button onclick="event.preventDefault(); control()">
+                <i class="fas fa-play"></i> Unpause Simulation
+            </button>`
+        inputs.forEach(el => el.disabled = false);
+        clearInterval(checkInterval);
+        checkInterval = null;
     }
 }
 
@@ -94,16 +105,15 @@ document.getElementById("configuration").addEventListener("submit", async functi
     event.preventDefault();
     const height = parseFloat(document.getElementById("grid-height").value);
     const width = parseFloat(document.getElementById("grid-width").value);
-    const pixelsPerMeter = parseFloat(document.getElementById("grid-ppm").value);
-    const networkType = document.getElementById("network-type").value;
-    const startingIP = document.getElementById("starting-ip").value;
-
+    //const pixelsPerMeter = parseFloat(document.getElementById("grid-ppm").value);
+    //const networkType = document.getElementById("network-type").value;
     // Rudimentary input sanity checks
-    if (isNaN(height) || isNaN(width) || isNaN(pixelsPerMeter) || height <= 0 || width <= 0 || pixelsPerMeter <= 0) {
+    if (isNaN(height) || isNaN(width) || isNaN(pixelsPerMeter) || height <= 0 || width <= 0) {
         alert("Please enter valid positive numbers for grid size.");
         return;
     }
 
+    /*
     let startingIPList = startingIP.split(".");
     let startingIPValid = true;
     
@@ -123,9 +133,11 @@ document.getElementById("configuration").addEventListener("submit", async functi
         alert("Please enter a valid IPv4 address");
         return;
     }
+    */
 
     resizeCanvas(height, width);
-    await initSimulation(height, width, pixelsPerMeter, networkType, startingIP);
+    //INSERT NEW FUNCTION FOR CHANGING NETWORK TYPE (if we get to it)
+    //await initSimulation(height, width, pixelsPerMeter, networkType, startingIP);
 });
 
 // Resize canvas based on configuration form
@@ -141,22 +153,10 @@ function resizeCanvas(height, width) {
 }
 
 // Let backend know about simulation configuration
-async function initSimulation(height, width, pixelsPerMeter, networkType, startingIP) {
-    console.log(height, width, pixelsPerMeter, networkType, startingIP);
-
+async function initSimulation() {
     try {
         const response = await fetch('/init/simulation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify ({
-                height: height,
-                width: width,
-                pixels_per_meter: pixelsPerMeter,
-                network_type: networkType,
-                starting_ip: startingIP,
-            })
+            method: 'POST'
         });
 
         if (!response.ok) {

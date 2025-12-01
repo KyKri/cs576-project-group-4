@@ -36,14 +36,13 @@
                     <h2>Controls</h2>
                     <form id="controls">
                         <button onclick="event.preventDefault(); control('start')">
-                            <i class="fas fa-play"></i> Start
+                            <i class="fas fa-play"></i> Start Simulation
                         </button>
-                        <button onclick="event.preventDefault(); control('pause')">
+                        <!--
+                        <button onclick="event.preventDefault(); control()">
                             <i class="fas fa-pause"></i> Pause
                         </button>
-                        <button onclick="event.preventDefault(); control('stop')">
-                            <i class="fas fa-stop"></i> Stop
-                        </button>
+                        -->
                     </form>
                 </div>
                 <div>
@@ -55,8 +54,10 @@
                             <input type="text" name="grid-height" id="grid-height" value="500">
                             <label for="grid-width">Width (px)</label>
                             <input type="text" name="grid-width" id="grid-width" value="500">
+                            <!--
                             <label for="grid-ppm">Pixels per Meter</label>
                             <input type="text" name="grid-ppm" id="grid-ppm" value="1">
+                            -->
                         </fieldset>
                         <fieldset>
                             <legend>Cellular Network</legend>
@@ -65,8 +66,6 @@
                                 <option value="LTE_20" selected="true">4G LTE</option>
                                 <option value="NR_100">5G</option>
                             </select>
-                            <label for="starting-ip">Starting IP Address</label>
-                            <input type="text" name="starting-ip" id="starting-ip" value="10.0.0.1">
                         </fieldset>
                         <button type="submit">Configure</button>
                     </form>
@@ -89,15 +88,6 @@
                 <p>{{log}}</p>
                 {% endfor %}
             </div>
-        </div>
-
-        <div id="websocket-example">
-            <form id="ws" action="" onsubmit="sendMessage(event)">
-                <input type="text" id="messageText" autocomplete="off"/>
-                <button>Send</button>
-            </form>
-            <ul id='messages'>
-            </ul>
         </div>
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

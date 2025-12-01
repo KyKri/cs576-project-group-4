@@ -53,36 +53,20 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
-@app.post("/control/start")
-async def control_start():
-    g.run(log_to_sdout=False)
-    g.toggle_pause()
-    return {"message": "Start action received"}
-
-
 @app.post("/control/pause")
 async def control_pause():
     g.toggle_pause()
-    return {"message": "Pause action received"}
-
-
-@app.post("/control/stop")
-async def control_stop():
-    # Logic to stop
-    g.toggle_pause()
-    return {"message": "Stop action received"}
+    return {"paused": g.paused}
 
 
 @app.post("/init/simulation")
-async def init_simulation(payload: SimulationConfig):
-    height = payload.height
-    width = payload.width
-    pixels_per_meter = payload.pixels_per_meter
-    network_type = payload.network_type
-    starting_ip = payload.starting_ip
+async def init_simulation():
+    #pixels_per_meter = payload.pixels_per_meter
+    #network_type = payload.network_type
+    #starting_ip = payload.starting_ip
 
-    g.set_starting_ip(starting_ip)
-    g.set_pixels_per_meter(pixels_per_meter)
+    #g.set_starting_ip(starting_ip)
+    g.set_pixels_per_meter(1)
 
     poll_ues_t = g.run_poll_ues()
     poll_towers_t = g.run_poll_towers()
@@ -90,10 +74,10 @@ async def init_simulation(payload: SimulationConfig):
     g.run()
     g.toggle_pause()  # unpause
     
-
     return {
         "ok": True,
         "message": "Simulation Initialized",
+        "paused": g.paused
     }
 
 
@@ -150,7 +134,8 @@ async def init_userequipment(payload: UserEquipmentInit):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
-            "active_packets": ue.active_packets
+            "up_packets": ue.active_upload_packets,
+            "down_packets": ue.active_download_packets
         },
     }
 
@@ -183,7 +168,8 @@ async def get_userequipment(ue_id: int):
             "y": ue.l1ue.y,
             "ip": ue.ip,
             "bs": bs,
-            "active_packets": ue.active_packets
+            "up_packets": ue.active_upload_packets,
+            "down_packets": ue.active_download_packets
         }
     }
 
@@ -193,7 +179,8 @@ async def check_userequipment(ue_id: int):
 
     return {
         "id": ue.id,
-        "active_packets": ue.active_packets
+        "up_packets": ue.active_upload_packets,
+        "down_packets": ue.active_download_packets
     }
 
 @app.get("/check/link/{ue_id}")
