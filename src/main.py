@@ -12,7 +12,7 @@ import uvicorn
 import queue
 import functools
 from glu import Glu, extract_ips_from_frame
-from contextlib import asynccontextmanager
+import layer1 as phy
 
 LOG_FORMAT = (
     "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d "
@@ -112,6 +112,21 @@ async def init_simulation(payload: SimulationConfig):
     return {
         "ok": True,
         "message": "Simulation Initialized",
+    }
+
+@app.post("/configure")
+async def init_simulation(payload: SimulationConfig):
+    network_type = payload.network_type
+    if network_type == "LTE_20":
+        tech = phy.LTE_20
+    else:
+        tech = phy.NR_100
+    for bs in g.base_stations:
+        bs.tower.t = tech
+
+    return {
+        "ok": True,
+        "message": "configured",
     }
 
 
