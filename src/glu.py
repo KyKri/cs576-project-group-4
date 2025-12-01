@@ -128,7 +128,6 @@ class Glu:
         upload_latency = src_ue.connected_to.tower.upload_latency(
             src_ue.l1ue, len(frame), self.active_ues()
         )
-        upload_latency = 0
         packet_error_rate = src_ue.connected_to.tower.upload_packet_error_rate(
             src_ue.l1ue, len(frame), self.active_ues()
         )
@@ -168,13 +167,11 @@ class Glu:
 
             # destination ip is in subnet but UE not found or not connected: drop packet
             if not dst_ue or not dst_ue.connected_to:
-                print("dropping packet: destination UE not found or not connected")
                 continue
 
             download_latency = dst_ue.connected_to.tower.download_latency(
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
             )
-            download_latency = 0
             packet_error_rate = dst_ue.connected_to.tower.download_packet_error_rate(
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
             )
