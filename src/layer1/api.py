@@ -22,7 +22,7 @@ class Tower:
         self.on = on
 
     def upload_latency(self, ue: UE, nbytes: int, active_ues: List[UE]) -> float:
-        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
+        distances = [ue_tower_dist(aue, self) for aue in active_ues if aue != ue]
         return self.t.up_latency(ue_tower_dist(ue, self), nbytes, distances)
 
     def download_latency(
@@ -42,7 +42,7 @@ class Tower:
         )  # convert to Mbps
 
     def upload_bandwidth_mbps(self, ue: UE, active_ues: List[UE]) -> float:
-        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
+        distances = [ue_tower_dist(aue, self) for aue in active_ues if aue != ue]
         return (
             self.t.rate_bps(self.t.sinr_ul(ue_tower_dist(ue, self), distances)) / 1e6
         )  # convert to Mbps
@@ -58,7 +58,7 @@ class Tower:
     def upload_packet_error_rate(
         self, ue: UE, nbytes: int, active_ues: List[UE]
     ) -> float:
-        distances = [ue_tower_dist(ue, self) for ue in active_ues if ue != ue]
+        distances = [ue_tower_dist(aue, self) for aue in active_ues if aue != ue]
         return self.t.per_ul_qpsk(ue_tower_dist(ue, self), nbytes, distances)
 
 

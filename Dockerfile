@@ -40,7 +40,7 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libssl3 ca-certificates iproute2 netcat-openbsd telnet iperf iptables iputils-ping tcpdump vim && \ 
+    libssl3 ca-certificates iproute2 netcat-openbsd telnet iperf3 iptables iputils-ping tcpdump vim && \ 
     rm -rf /var/lib/apt/lists/*
 
 # Install Firefox and dependencies for Wayland GUI + audio
