@@ -5,14 +5,30 @@ var BSList = [];
 var checkInterval; //for running asynchronous function that periodically checks for ue link status
 var simulationRunning = false;
 
-packets.onmessage = function(event) {
-    //console.log(event.data);
+async function logMessage(message){
     const logBox = document.getElementById('logs');
     const newLog = document.createElement('p');
-    newLog.textContent = `${logCount}: ${event.data}`;
+    newLog.textContent = `${logCount}: ${message}`;
     logBox.appendChild(newLog);
     logBox.scrollTop = logBox.scrollHeight;
     logCount ++;
+}
+
+function parsePacketLog(message){
+    const regex = /^(.+?) -> (.+?): (\d+) bytes$/;
+    const match = message.match(regex);
+    if(!match){return;}
+
+    return {
+        src: match[1], //source IP
+        dst: match[2], //destination IP
+        length: Number(match[3]) //packet length in bytes
+    }
+}
+
+packets.onmessage = function(event) {
+    //console.log(event.data);
+    logMessage(event.data);
 };
 
 function addBaseStation(){
@@ -104,38 +120,33 @@ document.getElementById("configuration").addEventListener("submit", async functi
     const height = parseFloat(document.getElementById("grid-height").value);
     const width = parseFloat(document.getElementById("grid-width").value);
     //const pixelsPerMeter = parseFloat(document.getElementById("grid-ppm").value);
-    //const networkType = document.getElementById("network-type").value;
+    const networkType = document.getElementById("network-type").value;
     // Rudimentary input sanity checks
     if (isNaN(height) || isNaN(width) || height <= 0 || width <= 0) {
         alert("Please enter valid positive numbers for grid size.");
         return;
     }
-
-    /*
-    let startingIPList = startingIP.split(".");
-    let startingIPValid = true;
-    
-    if (startingIPList.length !== 4) {
-        startingIPValid = false
-    }
-
-    for (let octet of startingIPList) {
-        octet = parseInt(octet, 10);
-
-        if (isNaN(octet) || octet > 255 || octet < 0) {
-            startingIPValid = false
+    //reconfigure simulation
+    try{
+        const response = await fetch('/configure', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                height: height, width: width, pixels_per_meter: 1,
+                network_type: networkType,
+                starting_ip: '10.0.0.1'
+            }) //all other values are defaults because they do not affect the configure function
+        });
+        if (!response.ok) {console.warn('Network response was not ok ' + response.statusText);}
+        else {
+            const data = await response.json();
+            logMessage(data.message);
         }
+    } catch (error) {
+        console.error(error);
     }
-
-    if (startingIPValid !== true) {
-        alert("Please enter a valid IPv4 address");
-        return;
-    }
-    */
 
     resizeCanvas(height, width);
-    //INSERT NEW FUNCTION FOR CHANGING NETWORK TYPE (if we get to it)
-    //await initSimulation(height, width, pixelsPerMeter, networkType, startingIP);
 });
 
 // Resize canvas based on configuration form
@@ -157,9 +168,7 @@ async function initSimulation() {
             method: 'POST'
         });
 
-        if (!response.ok) {
-            console.warn('Network response was not ok ' + response.statusText);
-        }
+        if (!response.ok) {console.warn('Network response was not ok ' + response.statusText);}
         else {
             const data = await response.json();
             console.log(data);

@@ -119,7 +119,7 @@ async def configure(payload: SimulationConfig):
 
     return {
         "ok": True,
-        "message": "configured",
+        "message": "Simulation configured",
     }
 
 
@@ -139,7 +139,7 @@ async def init_basestation(payload: BaseStationInit):
     g.syncronize_map()
 
     return {
-        "message": f"BaseStation {bs.id} created successfully",
+        "message": f"Base Station {bs.id} created successfully",
         "base_station": {
             "id": bs.id,
             "x": bs.tower.x,
@@ -169,7 +169,7 @@ async def init_userequipment(payload: UserEquipmentInit):
         bs = ue.connected_to.id
 
     return {
-        "message": f"UserEquipment {ue.id} created successfully",
+        "message": f"User Equipment {ue.id} created successfully",
         "user_equipment": {
             "id": ue.id,
             "x": ue.l1ue.x,

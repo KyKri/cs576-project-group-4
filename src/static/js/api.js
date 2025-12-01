@@ -74,7 +74,7 @@ async function getUEBaseStationStatus(id){
 function simulationStatus(){
     UEList.forEach(function(ue, index){
         checkUEActivePackets(ue.id).then(result => {
-            //console.log(result);
+            console.log(result);
             UEList[result.id].up_packets = result.up_packets;
             UEList[result.id].down_packets = result.down_packets;
         }).then(result => {

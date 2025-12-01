@@ -1,6 +1,11 @@
 body {
 }
-
+h1{
+    margin-bottom: 0;
+}
+h1 + p{
+    margin-bottom: 1.5em;
+}
 h2{
     margin-bottom: 5px;
 }
@@ -14,7 +19,11 @@ p{
     padding: 2px;
 }
 .font-awesome-icon.selected{
-    color: white;
+    text-shadow:
+    -1px -1px 0 white, /* Top-left shadow */
+    1px -1px 0 white,  /* Top-right shadow */
+    -1px 1px 0 white,  /* Bottom-left shadow */
+    1px 1px 0 white; 
 }
 
 .font-awesome-icon::before{
@@ -73,7 +82,7 @@ p{
 }
 
 #logs{
-    height:200px;
+    height:500px;
     border: 1px solid gray;
     overflow-y:auto;
     padding:10px;
