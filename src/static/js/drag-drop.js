@@ -42,6 +42,7 @@ function releaseDrag(event){
                 updateBaseStation(id, {x: x, y: y, on: onStatus}).then(result => {
                     console.log(result);
                     BSList[result.base_station.id] = result.base_station;
+                    logMessage(result.message);
                 }).then(result => {
                     updateEveryUserEquipment().then(result => {
                         updateCanvas();
@@ -55,6 +56,7 @@ function releaseDrag(event){
                 updateUserEquipment(id, {x: x, y: y, change_ip: false}).then(result => {
                     console.log(result);
                     UEList[result.user_equipment.id] = result.user_equipment;
+                    logMessage(result.message);
                 }).then(result => {
                     updateCanvas();
                     updateDeviceDetails();
@@ -76,6 +78,7 @@ function releaseDrag(event){
                         BSList[result.base_station.id] = result.base_station;
                         //once successfully created, set BS to active
                         lastIcon.classList.add('active'); 
+                        logMessage(result.message);
                     }).then(result => {
                         updateEveryUserEquipment().then(result => {
                             updateCanvas();
@@ -94,6 +97,7 @@ function releaseDrag(event){
                         UEList[result.user_equipment.id] = result.user_equipment;
                         //once successfully created, set UE to active
                         lastIcon.classList.add('active');
+                        logMessage(result.message);
                     }).then(result => {
                         updateCanvas();
                         draggedIcon = null;
