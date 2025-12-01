@@ -32,7 +32,6 @@ class Glu:
 
         self.pause_event = threading.Event()
         self.paused = True
-        self.stopped = False
 
         self.pixels_per_meter: float = 1.0
 
@@ -324,13 +323,6 @@ class Glu:
         self.paused = not self.paused
         if not self.paused:
             self.pause_event.set()
-
-    def stop(self) -> None:
-        self.stopped = True
-        # unblock possible waiting threads
-        self.log_queue.put(None)
-
-        
 
     def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
         self.starting_ip = ipaddress.ip_address(ip)
