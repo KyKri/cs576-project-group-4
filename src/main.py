@@ -9,31 +9,28 @@ from pydantic import BaseModel, confloat
 from pathlib import Path
 from typing import Literal
 import uvicorn
+import queue
+import functools
 from glu import Glu, extract_ips_from_frame
 from contextlib import asynccontextmanager
 
-logger = logging.getLogger("myapp")  # or __name__
+LOG_FORMAT = (
+    "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d "
+    "| %(funcName)s | %(message)s"
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+# Create your logger
+logger = logging.getLogger("myapp")
 logger.setLevel(logging.INFO)
 
 g = Glu()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.warning("start ...")
-    print("starting")
-    # startup
-    yield
-    # shutdown
-    print("shutind down")
-    logger.warning("Shutting down gracefully...")
-    g.stop()
-    logger.warning(f"g.stopped = {g.stopped}")
-    logger.warning(f"len(g.log_queue) = {g.log_queue.qsize()}")
-    logger.warning("Shutdown complete.")
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 app.mount(
@@ -299,23 +296,45 @@ async def transfer_endpoint(websocket: WebSocket):
         await log_packets(websocket)
     except WebSocketDisconnect:
         logger.warning("WebSocket client disconnected")
+    except asyncio.CancelledError:
+        logger.info("WebSocket handler cancelled (probably Ctrl+C / shutdown)")
+        # Optional: attempt a graceful close
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+        raise
 
 
 async def log_packets(websocket: WebSocket):
+    loop = asyncio.get_running_loop()
+
+    # You can keep or drop this greeting, up to you
     await websocket.send_text("hello there")
+
     while True:
-        if g.stopped:
-            break
-        packet = await asyncio.to_thread(g.log_queue.get)
-        if g.stopped:
-            break
+        try:
+            # Run blocking queue.get with a small timeout in the thread
+            packet = await loop.run_in_executor(
+                None,
+                functools.partial(
+                    g.log_queue.get, True, 0.5
+                ),  # block=True, timeout=0.5
+            )
+        except queue.Empty:
+            continue
+        except asyncio.CancelledError:
+            raise
+
         frame = packet.frame
-        (src, dst) = extract_ips_from_frame(frame)
+        src, dst = extract_ips_from_frame(frame)
+
         try:
             await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
         except WebSocketDisconnect:
-            logger.warning("WebSocket client disconnected")
             break
+        except asyncio.CancelledError:
+            raise
 
 
 if __name__ == "__main__":
