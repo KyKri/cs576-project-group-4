@@ -31,10 +31,10 @@ class Glu:
 
         self.frame_at_ue_ready = threading.Event()
         self.frame_at_tower_ready = threading.Event()
-        self.frame_at_log_ready = asyncio.Event()
 
         self.pause_event = threading.Event()
         self.paused = True
+        self.stopped = False
 
         self.pixels_per_meter: float = 1.0
 
@@ -115,11 +115,9 @@ class Glu:
             packet = Packet(now_in_ms(), frame, 0.0, None, None)
             self.upload_queue.enqueue(packet)
             self.log_queue.put(packet)
-            self.frame_at_log_ready.set()
             return True
 
         src_ue = self.get_ue_by_ip(src)
-        # print(f"Polled frame from UE {src}")
 
         # source UE not found or not connected: drop frame
         if not src_ue or src_ue.connected_to is None:
@@ -139,6 +137,7 @@ class Glu:
             src_ue.connected_to,
         )
         self.upload_queue.enqueue(packet)
+        self.log_queue.put(packet)
         return True
 
     def try_poll_towers(self) -> bool:
@@ -153,8 +152,6 @@ class Glu:
             # arrived packet is corrupted: continue
             if packet.is_corrupted():
                 continue
-                print(packet.packet_error_rate)
-                print("corrupted packet droped at tower")
 
             (_, dst) = extract_ips_from_frame(packet.frame)
 
@@ -198,8 +195,6 @@ class Glu:
             # arrived packet is corrupted: continue
             if packet.is_corrupted():
                 continue
-                print(packet.packet_error_rate)
-                print("corrupted packet droped at UE")
 
             self.cabernet.send_frame(packet.frame)
         return True
@@ -211,7 +206,6 @@ class Glu:
                 continue
             polled = self.try_poll_ues()
             if polled:
-                # print(f"polled from UEs: {polled}")
                 self.frame_at_ue_ready.set()
 
     def __run_poll_towers(self):
@@ -221,7 +215,6 @@ class Glu:
                 continue
             polled = self.try_poll_towers()
             if polled:
-                # print(f"polled from Towers: {polled}")
                 self.frame_at_tower_ready.set()
             else:
                 self.frame_at_ue_ready.wait(
@@ -333,6 +326,13 @@ class Glu:
         self.paused = not self.paused
         if not self.paused:
             self.pause_event.set()
+
+    def stop(self) -> None:
+        self.stopped = True
+        # unblock possible waiting threads
+        self.log_queue.put(None)
+
+        
 
     def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
         self.starting_ip = ipaddress.ip_address(ip)

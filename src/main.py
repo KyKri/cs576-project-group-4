@@ -1,16 +1,40 @@
 import asyncio
+import logging
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi import WebSocketDisconnect
 from pydantic import BaseModel, confloat
 from pathlib import Path
 from typing import Literal
 import uvicorn
 from glu import Glu, extract_ips_from_frame
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+logger = logging.getLogger("myapp")  # or __name__
+logger.setLevel(logging.INFO)
+
 g = Glu()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.warning("start ...")
+    print("starting")
+    # startup
+    yield
+    # shutdown
+    print("shutind down")
+    logger.warning("Shutting down gracefully...")
+    g.stop()
+    logger.warning(f"g.stopped = {g.stopped}")
+    logger.warning(f"len(g.log_queue) = {g.log_queue.qsize()}")
+    logger.warning("Shutdown complete.")
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 app.mount(
     "/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static"
@@ -87,7 +111,6 @@ async def init_simulation(payload: SimulationConfig):
 
     g.run()
     g.toggle_pause()  # unpause
-    
 
     return {
         "ok": True,
@@ -268,27 +291,32 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
     }
 
 
-@app.websocket("/activity")
-async def activity_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
-
-
 @app.websocket("/packet_transfer")
 async def transfer_endpoint(websocket: WebSocket):
     await websocket.accept()
-    await websocket.send_text(f"hello there")
-    await log_packets(websocket)
+    await websocket.send_text("hello there")
+    try:
+        await log_packets(websocket)
+    except WebSocketDisconnect:
+        logger.warning("WebSocket client disconnected")
+
 
 async def log_packets(websocket: WebSocket):
+    await websocket.send_text("hello there")
     while True:
+        if g.stopped:
+            break
         packet = await asyncio.to_thread(g.log_queue.get)
+        if g.stopped:
+            break
         frame = packet.frame
         (src, dst) = extract_ips_from_frame(frame)
-        await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
+        try:
+            await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
+        except WebSocketDisconnect:
+            logger.warning("WebSocket client disconnected")
+            break
 
 
 if __name__ == "__main__":
-    uvicorn.run(app,host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
