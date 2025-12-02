@@ -6,9 +6,9 @@ from typing import List
 
 import layer1 as phy
 import layer3 as net
-from packet_queue import PacketQueue, Packet
+from .packet_queue import PacketQueue, Packet
 from queue import Queue
-from model import UE, BaseStation
+from .model import UE, BaseStation
 
 
 class Glu:

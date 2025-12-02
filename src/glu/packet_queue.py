@@ -4,7 +4,7 @@ import time
 import heapq
 
 from typing import List
-from model import UE, BaseStation
+from .model import UE, BaseStation
 
 
 class Packet:
