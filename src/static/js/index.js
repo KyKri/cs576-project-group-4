@@ -160,6 +160,7 @@ async function initSimulation() {
         else {
             const data = await response.json();
             console.log(data);
+            logMessage(data.message);
         }
 
     } catch (error) {

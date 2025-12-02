@@ -96,7 +96,7 @@ async def init_simulation():
     g.toggle_pause()  # unpause
     return {
         "ok": True,
-        "message": "Simulation Initialized",
+        "message": "Simulation initialized",
         "paused": g.paused
     }
 
