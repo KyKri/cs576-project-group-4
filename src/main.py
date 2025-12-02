@@ -12,10 +12,7 @@ import uvicorn
 from glu import Glu, extract_ips_from_frame
 import layer1 as phy
 
-LOG_FORMAT = (
-    "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d "
-    "| %(funcName)s | %(message)s"
-)
+LOG_FORMAT = "%(levelname)s:\t[%(filename)s:%(lineno)d]:\t%(message)s"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,9 +66,13 @@ class UserEquipmentUpdate(BaseModel):
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    print("ArshiA Shutting down...")
+    logger.info("ArshiA Shutting down...")
     global g
-    del g
+    del g.cabernet
+    import gc
+
+    gc.collect()
+    logger.info("glu dropped")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -87,18 +88,12 @@ async def control_pause():
 
 @app.post("/init/simulation")
 async def init_simulation():
-    #g.set_pixels_per_meter(1)
-
     poll_ues_t = g.run_poll_ues()
     poll_towers_t = g.run_poll_towers()
     send_t = g.run_send()
-    g.run(log_to_sdout=False) #set log_to_sdout to True/default for debugging
+    g.run(log_to_sdout=False)  # set log_to_sdout to True/default for debugging
     g.toggle_pause()  # unpause
-    return {
-        "ok": True,
-        "message": "Simulation Initialized",
-        "paused": g.paused
-    }
+    return {"ok": True, "message": "Simulation Initialized", "paused": g.paused}
 
 
 @app.post("/configure")
@@ -171,7 +166,7 @@ async def init_userequipment(payload: UserEquipmentInit):
             "ip": ue.ip,
             "bs": bs,
             "up_packets": ue.active_upload_packets,
-            "down_packets": ue.active_download_packets
+            "down_packets": ue.active_download_packets,
         },
     }
 
@@ -205,9 +200,10 @@ async def get_userequipment(ue_id: int):
             "ip": ue.ip,
             "bs": bs,
             "up_packets": ue.active_upload_packets,
-            "down_packets": ue.active_download_packets
+            "down_packets": ue.active_download_packets,
         }
     }
+
 
 @app.get("/check/userequipment/{ue_id}")
 async def check_userequipment(ue_id: int):
@@ -216,16 +212,17 @@ async def check_userequipment(ue_id: int):
     return {
         "id": ue.id,
         "up_packets": ue.active_upload_packets,
-        "down_packets": ue.active_download_packets
+        "down_packets": ue.active_download_packets,
     }
+
 
 @app.get("/check/link/{ue_id}")
 async def check_link(ue_id: int):
     ue = g.get_ue(ue_id)
     l1ue = ue.l1ue
     nbytes = 1024
-    #assumes that UE is already connected to base station. 
-    #function should not call if UE is not connected to a base station
+    # assumes that UE is already connected to base station.
+    # function should not call if UE is not connected to a base station
     bs = ue.connected_to
 
     up_latency = bs.tower.upload_latency(l1ue, nbytes, g.active_ues())
@@ -241,8 +238,9 @@ async def check_link(ue_id: int):
         "upload_bandwidth": up_bandwidth,
         "download_bandwidth": dn_bandwidth,
         "upload_per": up_packeterr,
-        "download_per": dn_packeterr 
+        "download_per": dn_packeterr,
     }
+
 
 # Sample call
 """
@@ -338,12 +336,6 @@ async def transfer_endpoint(websocket: WebSocket):
         logger.warning("WebSocket client disconnected")
     except asyncio.CancelledError:
         logger.info("WebSocket handler cancelled (probably Ctrl+C / shutdown)")
-        # Optional: attempt a graceful close
-        try:
-            await websocket.close()
-        except Exception:
-            pass
-        raise
 
 
 async def log_packets(websocket: WebSocket):
@@ -360,6 +352,7 @@ async def log_packets(websocket: WebSocket):
             raise
         except asyncio.CancelledError:
             raise
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
