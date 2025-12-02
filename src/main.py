@@ -41,7 +41,6 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 class SimulationConfig(BaseModel):
     height: confloat(gt=0)
     width: confloat(gt=0)
-    pixels_per_meter: confloat(gt=0)
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
 
@@ -88,12 +87,7 @@ async def control_pause():
 
 @app.post("/init/simulation")
 async def init_simulation():
-    #pixels_per_meter = payload.pixels_per_meter
-    #network_type = payload.network_type
-    #starting_ip = payload.starting_ip
-
-    #g.set_starting_ip(starting_ip)
-    g.set_pixels_per_meter(1)
+    #g.set_pixels_per_meter(1)
 
     poll_ues_t = g.run_poll_ues()
     poll_towers_t = g.run_poll_towers()
@@ -133,8 +127,8 @@ curl -X POST http://localhost:8000/init/basestation \
 
 @app.post("/init/basestation")
 async def init_basestation(payload: BaseStationInit):
-    x = payload.x
-    y = payload.y
+    x = payload.x / g.pixels_per_meter
+    y = payload.y / g.pixels_per_meter
     bs = g.add_tower(x=x, y=y, on=True)
     g.syncronize_map()
 
@@ -142,8 +136,8 @@ async def init_basestation(payload: BaseStationInit):
         "message": f"Base Station {bs.id} created successfully",
         "base_station": {
             "id": bs.id,
-            "x": bs.tower.x,
-            "y": bs.tower.y,
+            "x": bs.tower.x * g.pixels_per_meter,
+            "y": bs.tower.y * g.pixels_per_meter,
             "on": bs.tower.on,
         },
     }
@@ -159,8 +153,8 @@ curl -X POST http://localhost:8000/init/userequipment \
 
 @app.post("/init/userequipment")
 async def init_userequipment(payload: UserEquipmentInit):
-    x = payload.x
-    y = payload.y
+    x = payload.x / g.pixels_per_meter
+    y = payload.y / g.pixels_per_meter
 
     ue = g.add_ue(x=x, y=y)
     g.syncronize_map()
@@ -172,8 +166,8 @@ async def init_userequipment(payload: UserEquipmentInit):
         "message": f"User Equipment {ue.id} created successfully",
         "user_equipment": {
             "id": ue.id,
-            "x": ue.l1ue.x,
-            "y": ue.l1ue.y,
+            "x": ue.l1ue.x * g.pixels_per_meter,
+            "y": ue.l1ue.y * g.pixels_per_meter,
             "ip": ue.ip,
             "bs": bs,
             "up_packets": ue.active_upload_packets,
@@ -188,8 +182,8 @@ async def get_basestation(bs_id: int):
     return {
         "base_station": {
             "id": bs.id,
-            "x": bs.tower.x,
-            "y": bs.tower.y,
+            "x": bs.tower.x * g.pixels_per_meter,
+            "y": bs.tower.y * g.pixels_per_meter,
             "on": bs.tower.on,
         }
     }
@@ -206,8 +200,8 @@ async def get_userequipment(ue_id: int):
     return {
         "user_equipment": {
             "id": ue.id,
-            "x": ue.l1ue.x,
-            "y": ue.l1ue.y,
+            "x": ue.l1ue.x * g.pixels_per_meter,
+            "y": ue.l1ue.y * g.pixels_per_meter,
             "ip": ue.ip,
             "bs": bs,
             "up_packets": ue.active_upload_packets,
@@ -260,8 +254,8 @@ curl -X POST http://localhost:8000/update/basestation/0 \
 
 @app.post("/update/basestation/{bs_id}")
 async def update_basestation(bs_id: int, payload: BaseStationUpdate):
-    x = payload.x
-    y = payload.y
+    x = payload.x / g.pixels_per_meter
+    y = payload.y / g.pixels_per_meter
     on = payload.on
 
     updated_bs = None
@@ -282,8 +276,8 @@ async def update_basestation(bs_id: int, payload: BaseStationUpdate):
         "message": f"BaseStation {bs_id} updated successfully",
         "base_station": {
             "id": updated_bs.id,
-            "x": updated_bs.tower.x,
-            "y": updated_bs.tower.y,
+            "x": updated_bs.tower.x * g.pixels_per_meter,
+            "y": updated_bs.tower.y * g.pixels_per_meter,
             "on": updated_bs.tower.on,
         },
     }
@@ -299,8 +293,8 @@ curl -X POST http://localhost:8000/update/userequipment/0 \
 
 @app.post("/update/userequipment/{ue_id}")
 async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
-    x = payload.x
-    y = payload.y
+    x = payload.x / g.pixels_per_meter
+    y = payload.y / g.pixels_per_meter
     change_ip = payload.change_ip
 
     updated_ue = None
@@ -326,8 +320,8 @@ async def update_userequipment(ue_id: int, payload: UserEquipmentUpdate):
         "message": f"UserEquipment {ue_id} updated successfully",
         "user_equipment": {
             "id": updated_ue.id,
-            "x": updated_ue.l1ue.x,
-            "y": updated_ue.l1ue.y,
+            "x": updated_ue.l1ue.x * g.pixels_per_meter,
+            "y": updated_ue.l1ue.y * g.pixels_per_meter,
             "ip": updated_ue.ip,
             "bs": bs,
         },

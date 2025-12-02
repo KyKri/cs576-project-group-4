@@ -14,18 +14,6 @@ async function logMessage(message){
     logCount ++;
 }
 
-function parsePacketLog(message){
-    const regex = /^(.+?) -> (.+?): (\d+) bytes$/;
-    const match = message.match(regex);
-    if(!match){return;}
-
-    return {
-        src: match[1], //source IP
-        dst: match[2], //destination IP
-        length: Number(match[3]) //packet length in bytes
-    }
-}
-
 packets.onmessage = function(event) {
     //console.log(event.data);
     logMessage(event.data);
@@ -132,7 +120,7 @@ document.getElementById("configuration").addEventListener("submit", async functi
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ 
-                height: height, width: width, pixels_per_meter: 1,
+                height: height, width: width,
                 network_type: networkType,
                 starting_ip: '10.0.0.1'
             }) //all other values are defaults because they do not affect the configure function

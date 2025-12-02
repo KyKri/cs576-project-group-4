@@ -19,11 +19,15 @@ p{
     padding: 2px;
 }
 .font-awesome-icon.selected{
+    color: red;
+    --shadow-size1: 1px;
+    --shadow-size2: -1px;
+    --shadow-color: white;
     text-shadow:
-    -1px -1px 0 white, /* Top-left shadow */
-    1px -1px 0 white,  /* Top-right shadow */
-    -1px 1px 0 white,  /* Bottom-left shadow */
-    1px 1px 0 white; 
+    var(--shadow-size2) var(--shadow-size2) 0 var(--shadow-color), /* Top-left shadow */
+    var(--shadow-size1) var(--shadow-size2) 0 var(--shadow-color),  /* Top-right shadow */
+    var(--shadow-size2) var(--shadow-size1) 0 var(--shadow-color),  /* Bottom-left shadow */
+    var(--shadow-size1) var(--shadow-size1) 0 var(--shadow-color);  /* Bottom-right shadow */
 }
 
 .font-awesome-icon::before{
@@ -43,7 +47,7 @@ p{
     height: 500px;
     border: 1px solid #000000;
     position: relative;
-    background-color: #888686;
+    background-color: lightgray;
 }
 
 #component-control{

@@ -106,7 +106,7 @@ function updateCanvas(){
         if(element.classList.contains('off')){return true;} //skip base station if it has been toggled off
 
         const { x, y } = getElementCoordinates(element);
-        drawCircle(ctx, x, y, 80);
+        drawCircle(ctx, x, y, 160);
     });
 
     //draw lines connectiong end users connecting to every associated base station
