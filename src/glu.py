@@ -33,7 +33,7 @@ class Glu:
         self.pause_event = threading.Event()
         self.paused = True
 
-        self.pixels_per_meter: float = 1.0
+        self.pixels_per_meter: float = 3.0
 
         self.threads: list[threading.Thread] = []
 
