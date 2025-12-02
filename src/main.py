@@ -88,10 +88,7 @@ async def control_pause():
 
 @app.post("/init/simulation")
 async def init_simulation():
-    poll_ues_t = g.run_poll_ues()
-    poll_towers_t = g.run_poll_towers()
-    send_t = g.run_send()
-    g.run(log_to_sdout=False)  # set log_to_sdout to True/default for debugging
+    g.run(log_to_sdout=False)  
     g.toggle_pause()  # unpause
     return {"ok": True, "message": "Simulation Initialized", "paused": g.paused}
 
