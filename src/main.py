@@ -41,7 +41,6 @@ class SimulationConfig(BaseModel):
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
 
-
 class BaseStationInit(BaseModel):
     x: float
     y: float
@@ -85,10 +84,20 @@ async def control_pause():
     g.toggle_pause()
     return {"paused": g.paused}
 
+@app.post("/control/drop")
+async def control_drop():
+    g.toggle_drop()
+    return {"drop": g.dropping_packets}
+
+@app.post("/control/delay")
+async def control_delay():
+    g.toggle_delay()
+    return {"delay": g.delaying_packets}
+
 
 @app.post("/init/simulation")
 async def init_simulation():
-    g.run(log_to_sdout=False)  
+    g.run(log_to_sdout=False)
     g.toggle_pause()  # unpause
     return {"ok": True, "message": "Simulation Initialized", "paused": g.paused}
 

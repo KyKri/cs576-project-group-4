@@ -37,6 +37,9 @@ class Glu:
 
         self.threads: list[threading.Thread] = []
 
+        self.dropping_packets: bool = False
+        self.delaying_packets: bool = False
+
     def active_towers(self) -> list[phy.Tower]:
         return [
             bs.tower
@@ -120,6 +123,9 @@ class Glu:
         if not src_ue or src_ue.connected_to is None:
             return False
 
+        if not self.delaying_packets:
+            upload_latency = 0
+
         upload_latency = src_ue.connected_to.tower.upload_latency(
             src_ue.l1ue, len(frame), self.active_ues()
         )
@@ -147,8 +153,9 @@ class Glu:
         for packet in ready_packets:
             packet.deliver()
             # arrived packet is corrupted: continue
-            if packet.is_corrupted():
-                continue
+            if self.dropping_packets:
+                if packet.is_corrupted():
+                    continue
 
             (_, dst) = extract_ips_from_frame(packet.frame)
 
@@ -166,6 +173,10 @@ class Glu:
             download_latency = dst_ue.connected_to.tower.download_latency(
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
             )
+
+            if not self.delaying_packets:
+                download_latency = 0
+
             packet_error_rate = dst_ue.connected_to.tower.download_packet_error_rate(
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
             )
@@ -190,8 +201,9 @@ class Glu:
             packet.deliver()
 
             # arrived packet is corrupted: continue
-            if packet.is_corrupted():
-                continue
+            if self.dropping_packets:
+                if packet.is_corrupted():
+                    continue
 
             self.cabernet.send_frame(packet.frame)
         return True
@@ -323,6 +335,12 @@ class Glu:
         self.paused = not self.paused
         if not self.paused:
             self.pause_event.set()
+
+    def toggle_drop(self) -> None:
+        self.dropping_packets = not self.dropping_packets
+
+    def toggle_delay(self) -> None:
+        self.delaying_packets = not self.delaying_packets
 
     def set_starting_ip(self, ip: str = "10.0.0.1") -> None:
         self.starting_ip = ipaddress.ip_address(ip)
