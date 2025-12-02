@@ -250,6 +250,7 @@ fn setup_internet_access(ip: &str, subnet: &str) {
     let mut child = Command::new("bash")
         .args(["-s", "--", &netns_for_ip(ip), subnet])
         .stdin(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .spawn()
         .expect("failed to spawn bash for internet setup");
 
@@ -260,16 +261,13 @@ fn setup_internet_access(ip: &str, subnet: &str) {
             .expect("failed to write internet setup script to stdin");
     }
 
-    let status = child.wait().expect("failed to wait on child");
+    let output = child.wait_with_output().expect("failed to wait on child");
 
-    if !status.success() {
-        let mut buf = String::new();
-        let _nbytes = &child
-            .stderr
-            .expect("failed to get stderr")
-            .read_to_string(&mut buf)
-            .unwrap();
-        eprintln!("Error setting up internet access: {buf}",);
+    if !output.status.success() {
+        eprintln!(
+            "Error setting up internet access: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 

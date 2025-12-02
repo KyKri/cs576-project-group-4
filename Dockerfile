@@ -77,6 +77,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     fi
 
 COPY src/*.py ./
+COPY src/glu ./glu
 COPY src/layer1 ./layer1
 COPY src/static ./static
 COPY src/templates ./templates
