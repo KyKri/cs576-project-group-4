@@ -38,7 +38,7 @@ class Glu:
         self.threads: list[threading.Thread] = []
 
         self.dropping_packets: bool = False
-        self.delaying_packets: bool = False
+        self.delaying_packets: bool = True
 
     def active_towers(self) -> list[phy.Tower]:
         return [
