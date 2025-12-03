@@ -59,7 +59,7 @@ function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packe
     ctx.lineDashOffset = linkOffset;
 
     //station to user
-    ctx.strokeStyle = "red";
+    ctx.strokeStyle = "darkred";
     if(down_packets > 0){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(startXa, startYa);
@@ -67,7 +67,7 @@ function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packe
     ctx.stroke();
 
     //user to station
-    ctx.strokeStyle = "red";
+    ctx.strokeStyle = "darkred";
     if(up_packets > 0){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(endXb, endYb);

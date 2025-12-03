@@ -40,6 +40,16 @@
                             <i class="fas fa-play"></i> Start Simulation
                         </button>
                     </form>
+                    <form>
+                        <input type="checkbox" id="drop-packets" name="drop-packets" checked
+                        onchange="setPacketSetting('drop')">
+                        <label for="drop-packets">Simulate Packet Corruption</label>
+                    </form>
+                    <form>
+                        <input type="checkbox" id="delay-packets" name="delay-packets" checked
+                        onchange="setPacketSetting('delay')">
+                        <label for="delay-packets">Simulate Packet Delay</label>
+                    </form>
                 </div>
                 <div>
                     <h2>Configuration</h2>

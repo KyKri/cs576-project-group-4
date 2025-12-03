@@ -76,10 +76,10 @@ async function control(action) {
                 const data = await response.json();
                 console.log(data);
                 simulationRunning = !data.paused;
+                logMessage(`Simulation paused: ${data.paused}`);
             }
         } catch (error) {console.error(error);}
     }
-
 
     if(simulationRunning){
         controls.innerHTML = `
@@ -100,6 +100,29 @@ async function control(action) {
         clearInterval(checkInterval);
         checkInterval = null;
     }
+}
+
+// Packet handling (part of simulation controls)
+async function setPacketSetting(type){
+    const packetSetting = document.getElementById(type + '-packets');
+    const settingLabel = packetSetting.labels[0].textContent;
+
+    try {
+        const response = await fetch(`/control/${type}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            console.warn('Network response was not ok ' + response.statusText);
+        }
+        else {
+            const data = await response.json();
+            console.log(data);
+            //Make sure UI checkbox matches status in backend
+            packetSetting.checked = data[type];
+            logMessage(`${settingLabel}: ${data[type]}`);
+        }
+    } catch (error) {console.error(error);}
 }
 
 // Handle simulation configuration
