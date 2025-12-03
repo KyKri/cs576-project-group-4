@@ -99,7 +99,7 @@ async def control_delay():
 async def init_simulation():
     g.run(log_to_sdout=False)
     g.toggle_pause()  # unpause
-    return {"ok": True, "message": "Simulation Initialized", "paused": g.paused}
+    return {"ok": True, "message": "Simulation initialized", "paused": g.paused}
 
 
 @app.post("/configure")

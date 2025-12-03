@@ -218,9 +218,9 @@ function writeUserEquipmentDetails(ue){
 function writeLinkDetails(result){
     document.getElementById('ue-link-details').innerHTML = `
         <li>Upload/Download Latency:<br>
-        ${result.upload_latency.toFixed(2)} | ${result.download_latency.toFixed(2)} </li>
+        ${result.upload_latency.toFixed(2)} ms | ${result.download_latency.toFixed(2)} ms</li>
         <li>Upload/Download Bandwidth:<br>
-        ${result.upload_bandwidth.toFixed(2)} | ${result.download_latency.toFixed(2)} </li>
+        ${result.upload_bandwidth.toFixed(2)} Mbps | ${result.download_bandwidth.toFixed(2)} Mbps</li>
         <li>Upload/Download Packet Error Rate:<br>
         ${result.upload_per.toFixed(2)} | ${result.download_per.toFixed(2)} </li>
     `;
