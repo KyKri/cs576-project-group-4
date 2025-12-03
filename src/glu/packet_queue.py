@@ -22,9 +22,10 @@ class Packet:
         self.src = src
         self.dst = dst
         if self.src:
-            self.src.active_upload_packets += 1
+            self.src.inc_upload_packets()
         if self.dst:
-            self.dst.active_download_packets += 1
+            self.dst.inc_download_packets()
+
 
     def is_corrupted(self) -> bool:
         return random.random() < self.packet_error_rate
@@ -34,9 +35,9 @@ class Packet:
 
     def deliver(self):
         if self.src:
-            self.src.active_upload_packets -= 1
+            self.src.dec_upload_packets()
         if self.dst:
-            self.dst.active_download_packets -= 1
+            self.dst.dec_download_packets()
 
     def __lt__(self, other: "Packet") -> bool:
         return self.arrival_time < other.arrival_time
