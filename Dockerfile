@@ -81,5 +81,6 @@ COPY src/glu ./glu
 COPY src/layer1 ./layer1
 COPY src/static ./static
 COPY src/templates ./templates
+COPY src/cmds/ue.sh /usr/bin/ue
 
 CMD ["python", "main.py"]
