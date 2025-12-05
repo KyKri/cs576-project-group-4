@@ -41,6 +41,7 @@ class SimulationConfig(BaseModel):
     network_type: Literal["LTE_20", "NR_100"]
     starting_ip: str
 
+
 class BaseStationInit(BaseModel):
     x: float
     y: float
@@ -84,10 +85,12 @@ async def control_pause():
     g.toggle_pause()
     return {"paused": g.paused}
 
+
 @app.post("/control/drop")
 async def control_drop():
     g.toggle_drop()
     return {"drop": g.dropping_packets}
+
 
 @app.post("/control/delay")
 async def control_delay():
@@ -350,10 +353,21 @@ async def log_packets(websocket: WebSocket):
 
     while True:
         try:
-            packet = await asyncio.to_thread(g.log_queue.get)
-            frame = packet.frame
-            src, dst = extract_ips_from_frame(frame)
-            await websocket.send_text(f"{src} -> {dst}: {len(frame)} bytes")
+            qsize = g.log_queue.qsize()
+            if qsize == 0:
+                packet = await asyncio.to_thread(g.log_queue.get)
+                frame = packet.frame
+                src, dst = extract_ips_from_frame(frame)
+                message = f"{src} -> {dst}: {len(frame)} bytes\n"
+                await websocket.send_text(message)
+                continue
+            packets = [g.log_queue.get() for _ in range(qsize)]
+            message = ""
+            for packet in packets:
+                frame = packet.frame
+                src, dst = extract_ips_from_frame(frame)
+                message += f"{src} -> {dst}: {len(frame)} bytes\n"
+            await websocket.send_text(message)
         except WebSocketDisconnect:
             raise
         except asyncio.CancelledError:
