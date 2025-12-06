@@ -8,17 +8,17 @@
     </head>
     <body>
         <h1>CellNetSim</h1>
-        <p>Arshia Akhavan, Kyle Krick, Jefferson Duan, Ana Arantes, Duc Nguyen, Alyssa Mollner, Jazmin Gallegos</p>
+        
         <section id="interface-main">
             <div class="left-column">
                 <div style="position:relative;">
                     <canvas id="simulation" width="500" height="500"></canvas>
                     <h2 style="margin-top:5px;">Components</h2>
                     <div id="component-control">
-                        <button onclick="event.preventDefault(); addBaseStation();">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); addBaseStation();">
                             Add Base Station
                         </button>
-                        <button onclick="event.preventDefault(); addUserEquipment();">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); addUserEquipment();">
                             Add User Equipment
                         </button>
                     </div>
@@ -36,7 +36,7 @@
                 <div>
                     <h2>Controls</h2>
                     <form id="controls">
-                        <button onclick="event.preventDefault(); control('start')">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); control('start')">
                             <i class="fas fa-play"></i> Start Simulation
                         </button>
                     </form>
@@ -98,6 +98,8 @@
                 </div>
             </div>
         </section>
+
+        <footer><small>Arshia Akhavan, Kyle Krick, Jefferson Duan, Ana Arantes, Duc Nguyen, Alyssa Mollner, Jazmin Gallegos</small></footer>
 
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

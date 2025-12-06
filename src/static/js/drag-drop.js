@@ -188,7 +188,7 @@ function updateDeviceDetails(){
 
 function writeBaseStationDetails(bs){
     document.getElementById('details-device').innerHTML = `
-    <p>Base Station ${bs.id}</p>
+    <p><strong>Base Station ${bs.id}</strong></p>
     <p>Status: ${bs.on}</p>
     <button onclick="event.preventDefault(); toggleBaseStation(${bs.id});">Toggle On/Off</button>
     <!-- <button onclick="event.preventDefault(); removeDevice();">
@@ -199,16 +199,17 @@ function writeBaseStationDetails(bs){
 
 function writeUserEquipmentDetails(ue){
     document.getElementById('details-device').innerHTML = `
-    <p>User Equipment ${ue.id} - IP Address: ${ue.ip}</p>
-    <p>Connected Base Station ID: ${ue.bs}</p>
-    <ul id="ue-link-details">
-        <li>Upload/Download Latency:<br>
-        0.00 | 0.00 </li>
-        <li>Upload/Download Bandwidth:<br>
-        0.00 | 0.00 </li>
-        <li>Upload/Download Packet Error Rate:<br>
-        0.00 | 0.00 </li>
-    </ul>
+    <p><strong>User Equipment ${ue.id}</strong> 
+    <br><strong>IP Address:</strong> ${ue.ip}
+    <br><strong>Connected Base Station ID:</strong> ${ue.bs}</p>
+    <div id="ue-link-details">
+        <p>Upload/Download Latency:<br>
+        <span class="stats">0.00 ms | 0.00 ms </span></p>
+        <p>Upload/Download Bandwidth:<br>
+        <span class="stats">0.00 Mbps | 0.00 Mbps </span></p>
+        <p>Upload/Download Packet Error Rate:<br>
+        <span class="stats">0.00 | 0.00 </span></p>
+    </div>
     <!-- <button onclick="event.preventDefault(); removeDevice();">
         Delete
     </button> -->`;
@@ -217,12 +218,12 @@ function writeUserEquipmentDetails(ue){
 
 function writeLinkDetails(result){
     document.getElementById('ue-link-details').innerHTML = `
-        <li>Upload/Download Latency:<br>
-        ${result.upload_latency.toFixed(2)} ms | ${result.download_latency.toFixed(2)} ms</li>
-        <li>Upload/Download Bandwidth:<br>
-        ${result.upload_bandwidth.toFixed(2)} Mbps | ${result.download_bandwidth.toFixed(2)} Mbps</li>
-        <li>Upload/Download Packet Error Rate:<br>
-        ${result.upload_per.toFixed(2)} | ${result.download_per.toFixed(2)} </li>
+        <p>Upload/Download Latency:<br>
+        <span class="stats">${result.upload_latency.toFixed(2)} ms | ${result.download_latency.toFixed(2)} ms</span></p>
+        <p>Upload/Download Bandwidth:<br>
+        <span class="stats">${result.upload_bandwidth.toFixed(2)} Mbps | ${result.download_bandwidth.toFixed(2)} Mbps</span></p>
+        <p>Upload/Download Packet Error Rate:<br>
+        <span class="stats">${result.upload_per.toFixed(2)} | ${result.download_per.toFixed(2)} </span></p>
     `;
     return result;
 }

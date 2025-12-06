@@ -358,7 +358,7 @@ async def log_packets(websocket: WebSocket):
                 packet = await asyncio.to_thread(g.log_queue.get)
                 frame = packet.frame
                 src, dst = extract_ips_from_frame(frame)
-                message = f"{src} -> {dst}: {len(frame)} bytes\n"
+                message = f"\n{src} -> {dst}: {len(frame)} bytes"
                 await websocket.send_text(message)
                 continue
             packets = [g.log_queue.get() for _ in range(qsize)]
@@ -366,7 +366,7 @@ async def log_packets(websocket: WebSocket):
             for packet in packets:
                 frame = packet.frame
                 src, dst = extract_ips_from_frame(frame)
-                message += f"{src} -> {dst}: {len(frame)} bytes\n"
+                message += f"\n{src} -> {dst}: {len(frame)} bytes"
             await websocket.send_text(message)
         except WebSocketDisconnect:
             raise
