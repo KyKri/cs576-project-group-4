@@ -1,1 +1,2 @@
-scripts/*.sh text eol=lf
+src/layer3/scripts/*.sh text eol=lf
+src/cmds/*.sh text eol=lf

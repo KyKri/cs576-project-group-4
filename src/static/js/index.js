@@ -8,15 +8,15 @@ var simulationRunning = false;
 async function logMessage(message){
     const logBox = document.getElementById('logs');
     const newLog = document.createElement('p');
-    newLog.textContent = `${logCount}: ${message}`;
+    newLog.innerHTML = `${logCount}: ${message}`;
     logBox.appendChild(newLog);
     logBox.scrollTop = logBox.scrollHeight;
     logCount ++;
 }
 
 packets.onmessage = function(event) {
-    //console.log(event.data);
-    logMessage(event.data);
+    //console.log(event);
+    logMessage(event.data.replace(/\n/g, "<br>"));
 };
 
 function addBaseStation(){
@@ -45,6 +45,16 @@ function extractIDNumber(deviceId){
     return { deviceType, id };
 }
 
+// HTML block as variable for Pause/Unpause button
+const pauseButton = `
+    <button onclick="event.preventDefault(); event.stopPropagation(); control()">
+        <i class="fas fa-pause"></i> Pause Simulation
+    </button>`;
+const unpauseButton = `
+    <button onclick="event.preventDefault(); event.stopPropagation(); control()">
+        <i class="fas fa-play"></i> Unpause Simulation
+    </button>`;
+
 // Hanlde simulation controls
 async function control(action) {
     const form = document.getElementById("configuration");
@@ -55,10 +65,7 @@ async function control(action) {
     if (action === "start" && !simulationRunning){
         await initSimulation();
         simulationRunning = true;
-        controls.innerHTML = `
-            <button onclick="event.preventDefault(); control()">
-                <i class="fas fa-pause"></i> Pause Simulation
-            </button>`
+        controls.innerHTML = pauseButton;
         if (!checkInterval){
             checkInterval = setInterval(simulationStatus, 500);
         }
@@ -82,20 +89,14 @@ async function control(action) {
     }
 
     if(simulationRunning){
-        controls.innerHTML = `
-            <button onclick="event.preventDefault(); control()">
-                <i class="fas fa-pause"></i> Pause Simulation
-            </button>`
+        controls.innerHTML = pauseButton;
         // Prevent changing configuration during running simulation
         inputs.forEach(el => el.disabled = true);
         if (!checkInterval){
             checkInterval = setInterval(simulationStatus, 1000);
         }
     }else{
-        controls.innerHTML = `
-            <button onclick="event.preventDefault(); control()">
-                <i class="fas fa-play"></i> Unpause Simulation
-            </button>`
+        controls.innerHTML = unpauseButton;
         inputs.forEach(el => el.disabled = false);
         clearInterval(checkInterval);
         checkInterval = null;

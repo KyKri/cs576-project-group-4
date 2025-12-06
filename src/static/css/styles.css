@@ -85,6 +85,11 @@ form:not(#controls){
     margin:5px 0px;
 }
 
+#details{
+    /* background: whitesmoke; */
+    padding: 1px 5px 10px 10px;
+    border: 1px solid gray;
+}
 #details-device p{
     margin-bottom:10px;
 }
@@ -92,8 +97,14 @@ form:not(#controls){
     margin-bottom:5px;
 }
 #ue-link-details{
-    padding-left:20px;
+    /*padding-left:20px;*/
+    margin-top:10px;
+}
+#ue-link-details p{
     margin:0;
+}
+#ue-link-details span.stats{
+    font-family:monospace;
 }
 
 #logs{

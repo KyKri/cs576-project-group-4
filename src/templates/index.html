@@ -15,10 +15,10 @@
                     <canvas id="simulation" width="500" height="500"></canvas>
                     <h2 style="margin-top:5px;">Components</h2>
                     <div id="component-control">
-                        <button onclick="event.preventDefault(); addBaseStation();">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); addBaseStation();">
                             Add Base Station
                         </button>
-                        <button onclick="event.preventDefault(); addUserEquipment();">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); addUserEquipment();">
                             Add User Equipment
                         </button>
                     </div>
@@ -36,7 +36,7 @@
                 <div>
                     <h2>Controls</h2>
                     <form id="controls">
-                        <button onclick="event.preventDefault(); control('start')">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); control('start')">
                             <i class="fas fa-play"></i> Start Simulation
                         </button>
                     </form>
