@@ -2,6 +2,7 @@ import threading
 import random
 import time
 import heapq
+from typing import Tuple
 
 from typing import List
 from .model import UE, BaseStation
@@ -25,7 +26,6 @@ class Packet:
             self.src.inc_upload_packets()
         if self.dst:
             self.dst.inc_download_packets()
-
 
     def is_corrupted(self) -> bool:
         return random.random() < self.packet_error_rate
@@ -61,8 +61,11 @@ class PacketQueue:
                 matched.append(item)
         return matched
 
-    def next_ready_timeout(self):
+    def next_ready_timeout(self) -> Tuple[bool, float | None]:
         with self._lock:
             if len(self._queue) == 0:
-                return None
-            return self._queue[0].arrival_time / 1000
+                return True, None
+            timeout_ms = self._queue[0].arrival_time - time.time() * 1000
+        if timeout_ms < 10:
+            return False, None
+        return True, timeout_ms / 1000
