@@ -1,4 +1,3 @@
-import asyncio
 import ipaddress
 import threading
 import time
@@ -229,9 +228,10 @@ class Glu:
             if polled:
                 self.frame_at_tower_ready.set()
             else:
-                self.frame_at_ue_ready.wait(
-                    timeout=self.upload_queue.next_ready_timeout()
-                )
+                should_sleep, timeout = self.upload_queue.next_ready_timeout()
+                if not should_sleep:
+                    continue
+                self.frame_at_ue_ready.wait(timeout=timeout)
 
     def __run_send(self):
         while True:
@@ -240,9 +240,10 @@ class Glu:
                 continue
             sent = self.try_send_frame()
             if not sent:
-                self.frame_at_tower_ready.wait(
-                    timeout=self.download_queue.next_ready_timeout()
-                )
+                should_sleep, timeout = self.download_queue.next_ready_timeout()
+                if not should_sleep:
+                    continue
+                self.frame_at_tower_ready.wait(timeout=timeout)
 
     def __run_stat(self, log_to_sdout: bool = True):
         while True:
