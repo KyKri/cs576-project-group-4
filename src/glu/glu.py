@@ -104,6 +104,46 @@ class Glu:
                     best_bs = bs
             ue.connected_to = best_bs
 
+    def try_poll_ue(self,src_ip) -> bool:
+        frame = self.cabernet.poll_frame_from_ue(src_ip)
+        # None means no frame available
+        if not frame:
+            return False
+
+        # packet source is internet: forward to tower
+        if ipaddress.ip_address(src_ip) not in self.subnet:
+            packet = Packet(now_in_ms(), frame, 0.0, None, None)
+            self.upload_queue.enqueue(packet)
+            self.log_queue.put(packet)
+            return True
+
+        src_ue = self.get_ue_by_ip(src_ip)
+
+        # source UE not found or not connected: drop frame
+        if not src_ue or src_ue.connected_to is None:
+            return False
+
+
+        if not self.delaying_packets:
+            upload_latency = 0
+        else:
+            upload_latency = src_ue.connected_to.tower.upload_latency(
+                src_ue.l1ue, len(frame), self.active_ues()
+            )
+        packet_error_rate = src_ue.connected_to.tower.upload_packet_error_rate(
+            src_ue.l1ue, len(frame), self.active_ues()
+        )
+        packet = Packet(
+            now_in_ms() + upload_latency,
+            frame,
+            packet_error_rate,
+            src_ue,
+            src_ue.connected_to,
+        )
+        self.upload_queue.enqueue(packet)
+        self.log_queue.put(packet)
+        return True
+
     def try_poll_ues(self) -> bool:
         frame = self.cabernet.poll_frame()
         # None means no frame available
@@ -335,7 +375,9 @@ class Glu:
                 if self.paused:
                     self.pause_event.wait()
                     continue
-                self.try_poll_ues()
+                for ue in self.ues:
+                    self.try_poll_ue(ue.ip)
+                self.try_poll_ue(str(self.gateway_ip))
                 self.try_poll_towers()
                 self.try_send_frame()
 
