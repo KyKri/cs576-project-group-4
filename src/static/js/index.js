@@ -25,6 +25,7 @@ async function toggleSocket(){
     }
     else{
         packets.close();
+        logMessage("Websocket closed");
     }
     
 }
