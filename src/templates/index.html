@@ -50,6 +50,10 @@
                         onchange="setPacketSetting('delay')">
                         <label for="delay-packets">Simulate Packet Delay</label>
                     </form>
+                    <form>
+                        <input type="checkbox" id="log-packets" name="log-packets" onchange="toggleSocket()">
+                        <label for="log-packets">Generate Packet Logs</label>
+                    </form>
                 </div>
                 <div>
                     <h2>Configuration</h2>
