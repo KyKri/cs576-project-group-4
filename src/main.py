@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from fastapi import FastAPI, WebSocket, Request
+from queue import Queue
+from fastapi import FastAPI, Query, WebSocket, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -351,6 +352,7 @@ async def transfer_endpoint(websocket: WebSocket):
 async def log_packets(websocket: WebSocket):
     # You can keep or drop this greeting, up to you
     await websocket.send_text("Log Packet Greeting")
+    g.log_queue = Queue()
 
     while True:
         try:
