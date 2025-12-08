@@ -35,6 +35,16 @@ footer{
     var(--shadow-size2) var(--shadow-size1) 0 var(--shadow-color),  /* Bottom-left shadow */
     var(--shadow-size1) var(--shadow-size1) 0 var(--shadow-color);  /* Bottom-right shadow */
 }
+.font-awesome-icon:hover{
+    --shadow-size1: 1px;
+    --shadow-size2: -1px;
+    --shadow-color: white;
+    text-shadow:
+    var(--shadow-size2) var(--shadow-size2) 0 var(--shadow-color), /* Top-left shadow */
+    var(--shadow-size1) var(--shadow-size2) 0 var(--shadow-color),  /* Top-right shadow */
+    var(--shadow-size2) var(--shadow-size1) 0 var(--shadow-color),  /* Bottom-left shadow */
+    var(--shadow-size1) var(--shadow-size1) 0 var(--shadow-color);  /* Bottom-right shadow */
+}
 
 .font-awesome-icon::before{
     font-size:1em;
