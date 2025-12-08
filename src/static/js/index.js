@@ -1,4 +1,4 @@
-var packets = new WebSocket("ws://localhost:8000/packet_transfer");
+var packets; //global variable standin for WebSocket
 var logCount = 0;
 var UEList = [];
 var BSList = [];
@@ -14,10 +14,20 @@ async function logMessage(message){
     logCount ++;
 }
 
-packets.onmessage = function(event) {
-    //console.log(event);
-    logMessage(event.data.replace(/\n/g, "<br>"));
-};
+async function toggleSocket(){
+    const socketSetting = document.getElementById('log-packets');
+    if(socketSetting.checked){
+        packets = new WebSocket("ws://localhost:8000/packet_transfer");
+        packets.onmessage = function(event) {
+            //console.log(event);
+            logMessage(event.data.replace(/\n/g, "<br>"));
+        };
+    }
+    else{
+        packets.close();
+    }
+    
+}
 
 function addBaseStation(){
     const newBaseStation = document.createElement('span');
