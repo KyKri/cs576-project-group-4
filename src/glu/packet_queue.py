@@ -2,6 +2,7 @@ import threading
 import random
 import time
 import heapq
+from queue import Queue
 from typing import Tuple
 
 from typing import List
@@ -45,27 +46,29 @@ class Packet:
 
 class PacketQueue:
     def __init__(self):
-        self._queue: List[Packet] = []
+        # self._queue: List[Packet] = []
+        self._queue=Queue()
         self._lock = threading.Lock()
 
     def enqueue(self, item: Packet):
-        with self._lock:
-            heapq.heappush(self._queue, item)
+        self._queue.put(item)
+        # heapq.heappush(self._queue, item)
 
     def pop_arrived(self) -> List[Packet]:
         matched: List[Packet] = []
 
-        with self._lock:
-            while len(self._queue) > 0 and self._queue[0].has_arrived():
-                item = heapq.heappop(self._queue)
-                matched.append(item)
+        # while len(self._queue) > 0 and self._queue[0].has_arrived():
+        while self._queue.qsize() > 0 and self._queue.queue[0].has_arrived():
+            # item = heapq.heappop(self._queue)
+            item = self._queue.get()
+            matched.append(item)
         return matched
 
     def next_ready_timeout(self) -> Tuple[bool, float | None]:
-        with self._lock:
-            if len(self._queue) == 0:
-                return True, None
-            timeout_ms = self._queue[0].arrival_time - time.time() * 1000
+        # if len(self._queue) == 0:
+        if self._queue.empty():
+            return True, None
+        timeout_ms = self._queue.queue[0].arrival_time - time.time() * 1000
         if timeout_ms < 10:
             return False, None
         return True, timeout_ms / 1000
