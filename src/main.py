@@ -100,7 +100,8 @@ async def control_delay():
 
 @app.post("/init/simulation")
 async def init_simulation():
-    g.run(log_to_sdout=False)
+    # g.run(log_to_sdout=False)
+    g.run_single_threaded()
     g.toggle_pause()  # unpause
     return {"ok": True, "message": "Simulation initialized", "paused": g.paused}
 

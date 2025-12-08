@@ -11,6 +11,9 @@ class UE:
         self.x = x
         self.y = y
 
+    def __eq__(self, value: object) -> bool:
+        return self.x == value.x and self.y == value.y
+
 
 class Tower:
     def __init__(
@@ -20,6 +23,9 @@ class Tower:
         self.x = x
         self.y = y
         self.on = on
+
+    def __eq__(self, value: object) -> bool:
+        return self.x == value.x and self.y == value.y
 
     def upload_latency(self, ue: UE, nbytes: int, active_ues: List[UE]) -> float:
         distances = [ue_tower_dist(aue, self) for aue in active_ues if aue != ue]

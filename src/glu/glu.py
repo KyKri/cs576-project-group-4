@@ -125,12 +125,13 @@ class Glu:
         if not src_ue or src_ue.connected_to is None:
             return False
 
+
         if not self.delaying_packets:
             upload_latency = 0
-
-        upload_latency = src_ue.connected_to.tower.upload_latency(
-            src_ue.l1ue, len(frame), self.active_ues()
-        )
+        else:
+            upload_latency = src_ue.connected_to.tower.upload_latency(
+                src_ue.l1ue, len(frame), self.active_ues()
+            )
         packet_error_rate = src_ue.connected_to.tower.upload_packet_error_rate(
             src_ue.l1ue, len(frame), self.active_ues()
         )
@@ -172,12 +173,13 @@ class Glu:
             if not dst_ue or not dst_ue.connected_to:
                 continue
 
-            download_latency = dst_ue.connected_to.tower.download_latency(
-                dst_ue.l1ue, len(packet.frame), self.active_towers()
-            )
-
             if not self.delaying_packets:
                 download_latency = 0
+            else:
+                download_latency = dst_ue.connected_to.tower.download_latency(
+                    dst_ue.l1ue, len(packet.frame), self.active_towers()
+                )
+
 
             packet_error_rate = dst_ue.connected_to.tower.download_packet_error_rate(
                 dst_ue.l1ue, len(packet.frame), self.active_towers()
@@ -209,6 +211,8 @@ class Glu:
 
             self.cabernet.send_frame(packet.frame)
         return True
+
+
 
     def __run_poll_ues(self):
         while True:
@@ -324,6 +328,20 @@ class Glu:
         t3 = self.run_send()
         t4 = self.run_stat(log_to_sdout)
         self.threads.extend([t1, t2, t3, t4])
+
+    def run_single_threaded(self) -> None:
+        def single_thread_run():
+            while True:
+                if self.paused:
+                    self.pause_event.wait()
+                    continue
+                self.try_poll_ues()
+                self.try_poll_towers()
+                self.try_send_frame()
+
+        t = threading.Thread( target=single_thread_run, name="GluAll", daemon=True)
+        t.start()
+        self.threads.append(t)
 
     def block(self) -> None:
         for t in self.threads:
