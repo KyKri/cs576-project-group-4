@@ -177,9 +177,11 @@ function updateDeviceDetails(){
                 //console.log(result);
                 UEList[result.user_equipment.id] = result.user_equipment;
                 writeUserEquipmentDetails(result.user_equipment);
-                getUEBaseStationStatus(id).then(result => {
-                    writeLinkDetails(result);
-                })
+                if(result.user_equipment.bs >= 0){
+                    getUEBaseStationStatus(id).then(result => {
+                        writeLinkDetails(result);
+                    });
+                }
                 return result;
             });
         } catch (err) { console.log(err); }
