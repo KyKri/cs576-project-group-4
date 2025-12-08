@@ -39,7 +39,7 @@ function drawCircle(ctx, x, y, r){
 let linkOffset = 0;
 let dash = 5;
 
-function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packets){
+function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets_time, down_packets_time){
     const offset = 2;
     const angle = Math.atan2(endY - startY, endX - startX);
 
@@ -60,7 +60,7 @@ function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packe
 
     //station to user
     ctx.strokeStyle = "darkred";
-    if(down_packets > 0){ctx.strokeStyle = "white";}
+    if(down_packets_time){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(startXa, startYa);
     ctx.lineTo(endXa, endYa);
@@ -68,7 +68,7 @@ function drawDoubleLines(ctx, startX, startY, endX, endY, up_packets, down_packe
 
     //user to station
     ctx.strokeStyle = "darkred";
-    if(up_packets > 0){ctx.strokeStyle = "white";}
+    if(up_packets_time){ctx.strokeStyle = "white";}
     ctx.beginPath();
     ctx.moveTo(endXb, endYb);
     ctx.lineTo(startXb, startYb);
@@ -117,9 +117,13 @@ function updateCanvas(){
         if(stationId < 0){return true;}//no connection is no valid base station id
         const station = getElementCoordinates(document.getElementById("BaseStation_" + stationId));
         //console.log("UserEquipment_" + userId, "BaseStation_" + stationId);
-
+        
+        const timeThreshold = 1500;
+        const lastActiveUpPacketDifference = Date.now() - UEList[userId].up_packets;
+        const lastActiveDownPacketDifference = Date.now() - UEList[userId].down_packets;
         drawDoubleLines(ctx, user.x, user.y, station.x, station.y, 
-            UEList[userId].up_packets, UEList[userId].down_packets);
+            (lastActiveUpPacketDifference < timeThreshold), 
+            (lastActiveDownPacketDifference < timeThreshold));
 
         //baseStationsOnCanvas.each(function(j, element2){})
     });

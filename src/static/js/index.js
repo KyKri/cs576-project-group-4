@@ -110,7 +110,6 @@ async function control(action) {
         inputs.forEach(el => el.disabled = false);
         clearInterval(checkInterval);
         checkInterval = null;
-        shutOffAllLinks();
     }
 }
 
