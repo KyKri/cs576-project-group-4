@@ -109,6 +109,8 @@ class Glu:
         # None means no frame available
         if not frame:
             return False
+        
+        (src_ip, _) = extract_ips_from_frame(frame)
 
         # packet source is internet: forward to tower
         if ipaddress.ip_address(src_ip) not in self.subnet:
