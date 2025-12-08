@@ -9,8 +9,16 @@ h1 + p{
 h2{
     margin-bottom: 5px;
 }
+h1, h2{
+    font-family: "Major Mono Display", serif;
+    font-weight: 400;
+    font-style: normal;
+}
 p{
     margin-top: 5px;
+}
+form label{
+    vertical-align: top;
 }
 footer{
     position:absolute;

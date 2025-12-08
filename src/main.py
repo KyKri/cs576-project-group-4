@@ -176,8 +176,8 @@ async def init_userequipment(payload: UserEquipmentInit):
             "y": ue.l1ue.y * g.pixels_per_meter,
             "ip": ue.ip,
             "bs": bs,
-            "up_packets": ue.active_upload_packets,
-            "down_packets": ue.active_download_packets,
+            "up_packets": ue.last_upload_epoch,
+            "down_packets": ue.last_download_epoch,
         },
     }
 
@@ -210,8 +210,8 @@ async def get_userequipment(ue_id: int):
             "y": ue.l1ue.y * g.pixels_per_meter,
             "ip": ue.ip,
             "bs": bs,
-            "up_packets": ue.active_upload_packets,
-            "down_packets": ue.active_download_packets,
+            "up_packets": ue.last_upload_epoch,
+            "down_packets": ue.last_download_epoch,
         }
     }
 
@@ -222,8 +222,8 @@ async def check_userequipment(ue_id: int):
 
     return {
         "id": ue.id,
-        "up_packets": ue.active_upload_packets,
-        "down_packets": ue.active_download_packets,
+        "up_packets": ue.last_upload_epoch,
+        "down_packets": ue.last_download_epoch,
     }
 
 

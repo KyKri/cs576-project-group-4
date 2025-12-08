@@ -72,29 +72,11 @@ async function getUEBaseStationStatus(id){
 }
 
 function simulationStatus(){
-    //set threshold of checks required before packets register as inactive again
-    const activePacketCounter = 5; 
-    //for every 0 packet value returned from check, the counter is decreased by 1.
-    //if an active packet is detected, the counter is reset
-    //the counter should never go below 0
     UEList.forEach(function(ue, index){
         checkUEActivePackets(ue.id).then(result => {
             //console.log(result);
-            if(result.up_packets > 0){
-                UEList[result.id].up_packets = activePacketCounter; 
-            } 
-            else if(result.up_packets <= 0){
-                UEList[result.id].up_packets --;
-                if(UEList[result.id].up_packets < 0){UEList[result.id].up_packets = 0;}
-            }
-
-            if(result.down_packets > 0){
-                UEList[result.id].down_packets = activePacketCounter;
-            }
-            else if(result.down_packets <= 0){
-                UEList[result.id].down_packets --;
-                if(UEList[result.id].down_packets < 0){UEList[result.id].down_packets = 0;}
-            }
+            UEList[result.id].up_packets = result.up_packets;
+            UEList[result.id].down_packets = result.down_packets;
         }).then(result => {
             updateCanvas();
         });
