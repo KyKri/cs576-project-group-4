@@ -124,23 +124,6 @@ function updateCanvas(){
         drawDoubleLines(ctx, user.x, user.y, station.x, station.y, 
             (lastActiveUpPacketDifference < timeThreshold), 
             (lastActiveDownPacketDifference < timeThreshold));
-
-        //baseStationsOnCanvas.each(function(j, element2){})
     });
 }
 
-//load base stations and user equipment on canvas if they already exist (upon window refresh)
-/*
-window.onload = function(){
-    BSList.forEach(function(bs, index){
-        console.log(bs);
-        let bsElement = addBaseStation();
-        const { canvas, xOffset, yOffset } = getCanvasDetails();
-        const { xElement, yElement, widthOffset, heightOffset } = getElementDetails(bsElement);
-        bsElement.style.left = `${bs.x + xOffset - widthOffset}px`;
-        bsElement.style.top = `${bs.y + yOffset - heightOffset}px`;
-        bsElement.classList.add('active');
-        bsElement.id = "BaseStation_" + bs.id;
-    });
-}
-*/
