@@ -89,8 +89,16 @@ docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun 
 # Mac
 ...
 
-# Windows
-...
+# Windows (Needs to be run within in WSL2)
+docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v /mnt/wslg:/mnt/wslg \
+  -e DISPLAY \
+  -e WAYLAND_DISPLAY \
+  -e XDG_RUNTIME_DIR \
+  -e PULSE_SERVER cellnetsim:latest bash
+# Windows without Firefox (Can be run in Powershell, assumes Git is installed on system)
+docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
 
 You can then interact with this container directly via terminal.
