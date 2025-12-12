@@ -64,13 +64,13 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 ```bash
 docker build . -f Dockerfile -t cellnetsim:latest
 ```
-1. Run the container, with capabilities for TUN/TAP:
+2. Run the container, with capabilities for TUN/TAP:
 ```bash
 docker run --rm -it --privileged --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
 or if you want GUI setup for `Firefox`:
+- Arch + Wayland
 ```bash 
-# Arch + Wayland
 docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun \
   -e WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0} \
   -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
@@ -83,13 +83,17 @@ docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun 
   --device /dev/snd \
   --shm-size=1g \
   cellnetsim:latest bash
-# Debian + GDM
+```
+- Debian + GDM
+```bash
 ...
-
-# Mac
+```
+- Mac
+```bash
 ...
-
-# Windows (Needs to be run within in WSL2)
+```
+- Windows (Needs to be run within in WSL2)
+```bash
 docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v /mnt/wslg:/mnt/wslg \
@@ -97,7 +101,9 @@ docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tu
   -e WAYLAND_DISPLAY \
   -e XDG_RUNTIME_DIR \
   -e PULSE_SERVER cellnetsim:latest bash
-# Windows without Firefox (Can be run in Powershell, assumes Git is installed on system)
+```
+- Windows without Firefox (Can be run in Powershell, assumes Git is installed on system)
+```bash
 docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
 
