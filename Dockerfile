@@ -28,7 +28,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
       -o /wheels
 
 
-
 ######################### Runtime #################################
 FROM python:3.13-trixie AS runtime
 
@@ -82,5 +81,8 @@ COPY src/layer1 ./layer1
 COPY src/static ./static
 COPY src/templates ./templates
 COPY src/cmds/ue.sh /usr/bin/ue
+
+#commands that run for compatability with Windows 
+RUN sed -i 's/\r//' /usr/bin/ue
 
 CMD ["python", "main.py"]
