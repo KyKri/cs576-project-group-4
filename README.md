@@ -66,7 +66,7 @@ docker build . -f Dockerfile -t cellnetsim:latest
 ```
 2. Run the container, with capabilities for TUN/TAP:
 ```bash
-docker run --rm -it --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
+docker run --rm -it -p 8000:8000 --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
 3. If you want GUI setup for `Firefox`:
 - Arch + Wayland
