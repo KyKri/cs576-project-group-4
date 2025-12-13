@@ -66,12 +66,12 @@ docker build . -f Dockerfile -t cellnetsim:latest
 ```
 2. Run the container, with capabilities for TUN/TAP:
 ```bash
-docker run --rm -it --privileged --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
+docker run --rm -it --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
 ```
-or if you want GUI setup for `Firefox`:
+3. If you want GUI setup for `Firefox`:
 - Arch + Wayland
 ```bash 
-docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun \
+docker run --rm -it -p 8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun \
   -e WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0} \
   -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
   -e MOZ_ENABLE_WAYLAND=1 \
@@ -84,15 +84,23 @@ docker run --rm -it -p8080:8000 --privileged --device=/dev/net/tun:/dev/net/tun 
   --shm-size=1g \
   cellnetsim:latest bash
 ```
-- Debian + GDM
-```bash
-...
-```
 - Mac
+
+Download and install XQuartz on your Mac. 
+From the Security tab of XQuartz preferences, you will need to allow connections from network clients. 
+You will then need to restart XQuartz. 
+
+After reopening XQuartz, open your terminal and add your localhost with:
 ```bash
-...
+xhost +127.0.0.1
 ```
-- Windows (Needs to be run within in WSL2)
+
+Then you can run the container with:
+```bash
+docker run --rm -it -e DISPLAY=host.docker.internal:0 -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged cellnetsim:latest bash
+```
+
+- Windows (Needs to be run within WSL2)
 ```bash
 docker run --rm -it -p 8000:8000 --shm-size=1g --device=/dev/net/tun:/dev/net/tun --privileged \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
